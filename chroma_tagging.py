@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
+
 """ 
 the script for the morphological analysis of the longitudinal corpus of spoken Czech child-adult interactions
 
 MIT License
 
 Copyright (c) 2023 Jakub Sláma
+Copyright (c) 2024 Ivan Kraus
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +43,15 @@ files with this script is thus rather slow), even though it thus this job as wel
 
 """
 
+from corpy.morphodita import Tagger
 
+import argparse
+import re
+import sys
+import os
+
+class CoCzeFLATaggerError(Exception):
+    pass
 
 """
 a function for using the MorphoDiTa tagger, see https://ufal.mff.cuni.cz/morphodita
@@ -53,10 +64,8 @@ example of use: tokenize("vidím Mařenku")
 
 """
 
-def tokenize(text):
-    from corpy.morphodita import Tagger
-    cs_tagger = Tagger("./czech-morfflex-pdt-161115/czech-morfflex-pdt-161115.tagger")
-    output = list(cs_tagger.tag(text, convert="strip_lemma_id"))
+def tokenize(text, tagger:Tagger):
+    output = list(tagger.tag(text, convert="strip_lemma_id"))
     return output
 
 
@@ -70,7 +79,6 @@ example of output: 'toho vybarvování .'
 """
 
 def transform(input):
-    import re
     if input.startswith("@"):
         result = "NA"
         return result
@@ -431,7 +439,7 @@ this function assures that tokens with the placeholders starting with the string
 
 """
 
-def zpracovat(text):
+def zpracovat(text, tagger):
     if ("bacashoogachi" in text) or ("bacashoogaciz" in text):
         caution = True
         chi = []
@@ -454,7 +462,7 @@ def zpracovat(text):
     else:
         caution = False
 
-    result = tokenize(text)
+    result = tokenize(text, tagger)
     word_list = []
     pos_list = []
     tag_list = []
@@ -621,22 +629,30 @@ example of use: file_to_file("./test_files/aneta.txt", "./test_files/aneta_resul
 
 """
 
-def file_to_file(path, path_goal):
+def annotate_file(path, path_goal, tagger):
     with open(path, "r") as file:
-        file = file.read()
         with open(path_goal, "a") as file_goal:
-            for line in file.split("\n"):
-                file_goal.write(mezera_interpunkce(line))
-                if line!= "":
-                    if transform(line) != "NA":
-                        if transform(line) == "." or transform(line) == "0 ." or transform(line) == "nee ." or transform(line) == "emem ." or transform(line) == "mhm ." or transform(line) == "hm .":
-                            file_goal.write("\n")
-                        else:
-                            file_goal.write("\n")
-                            file_goal.write(zpracovat(transform(line)))
-                    elif transform(line) == "NA":
-                        file_goal.write("\n")
-                        
+            annotate_filestream(file, file_goal, tagger)
+
+def annotate_filestream(source_fs, target_fs, tagger:Tagger):
+    for line in source_fs:
+        target_fs.write(mezera_interpunkce(line))
+        if line!= "":
+            if transform(line) != "NA":
+                if transform(line) == "." or transform(line) == "0 ." or transform(line) == "nee ." or transform(line) == "emem ." or transform(line) == "mhm ." or transform(line) == "hm .":
+                    target_fs.write("\n")
+                else:
+                    target_fs.write("\n")
+                    target_fs.write(zpracovat(transform(line), tagger))
+            elif transform(line) == "NA":
+                target_fs.write("\n")
+
+_tagger = None                    
+def _get_tagger():
+    global _tagger
+    if _tagger is None:
+        _tagger = Tagger("_local/czech-morfflex2.0-pdtc1.0-220710/czech-morfflex2.0-pdtc1.0-220710.tagger")
+    return _tagger
                         
 """
 to process all corpus files within a folder with the function file_to_file(), the following code was used
@@ -645,16 +661,34 @@ to process all corpus files within a folder with the function file_to_file(), th
 
 """
 
-import nltk
 
-path = "/longitudinal_final/corpus/Sara/"
-folder = nltk.corpus.PlaintextCorpusReader(path, r".*\.txt", encoding="utf-8")
-print(path)
-for file in folder.fileids():
-    print(file)
-    if file.startswith("."):
-        pass
+def main():
+    # TODO: review
+    parser = argparse.ArgumentParser(
+        description='Add morphological annotation according to the CoCzeFLA standards to a text file. REVIEW'
+    )
+    parser.add_argument('-s', '--std', action='store_true', help='receive/print input/output on stdin/stdout')
+    parser.add_argument('-o', '--outdir', nargs=1, type=str, help='directory where output files should be stored')
+    parser.add_argument('inputfiles', nargs='*', default=[])
+
+    args = parser.parse_args(sys.argv[1:])
+
+    if args.std:
+        annotate_filestream(sys.stdin, sys.stdout, _get_tagger())
+    elif args.outdir:
+        if len(args.inputfiles) == 0:
+            print('Please specify your input files. See --help for more.', file=sys.stderr)
+            return
+        
+        if not os.path.isdir(args.outdir[0]):
+            os.makedirs(args.outdir[0])
+        
+        for file in args.inputfiles:
+            print(file)
+            target_path = os.path.join(args.outdir[0], os.path.basename(file))
+            annotate_file(file, target_path, _get_tagger())
     else:
-        file_old = path + file
-        file_new = path + "Sara_tagged/" + file
-        file_to_file(file_old, file_new)
+        print('An output directory needs to be specified. See --help for more.', file=sys.stderr)
+        
+if __name__ == '__main__':
+    main()
