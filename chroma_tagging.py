@@ -208,11 +208,11 @@ def pos(tag, word, lemma):
         result = "x"
     elif tag.startswith("N"):
         result = "n"
-        if lemma in ["dveře", "peníze", "šaty", "šatičky", "slipy", "brýle", "brejle", "záda", "kamna", "kalhotky", "nůžky", "vrata", "korále", "dvířka", "plavky", "kalhoty", "hodiny", "hodinky", "boby", "kraťasy", "jesličky", "narozeniny"]: # pomnožná
+        if lemma in constants.PLURAL_INVARIABLE_NOUNS: # pomnožná
             result = "n:pt" # plural invariable nouns
         if word == word.capitalize(): # proper nouns
             result = "n:prop"
-            if lemma in ["Prčice"]: # a proper noun that is also a plural invariable noun
+            if lemma in constants.PLURAL_INVARIABLE_PROPER_NOUNS: # a proper noun that is also a plural invariable noun
                 result = "n:prop:pt"
     elif tag.startswith("A"):
         result = "adj"
@@ -260,16 +260,16 @@ def pos(tag, word, lemma):
         
     elif tag.startswith("V"):
         result = "v"
-        if lemma in ["moci", "muset", "smět"]: # modal verbs
+        if lemma in constants.MODAL_VERBS: # modal verbs
             result = "v:mod"
-        if lemma == "být":
+        if lemma == constants.AUX:
             result = "v:aux/cop"
 
     elif tag.startswith("D"):
         result = "adv"
-        if lemma in ["tu", "někam", "sem", "tamhle", "támhle", "tuhle", "tady", "tadyhle", "zde", "tam", "tamhle", "onde", "odtud", "odsud", "tudy", "tudyhle", "tamtudy", "teď", "teďka", "nyní", "tehdy", "tenkrát", "onehdy", "poté", "pak", "nato", "tak", "takto", "takhle", "tolik", "proto", "kde", "kdekoli", "kdekoliv", "kam", "kamkoli", "kamkoliv", "odkud", "odkudkoli", "odkudkoliv", "kudy", "kudykoli", "kudykoliv", "kdy", "kdykoli", "kdykoliv", "dokdy", "odkdy", "nakdy", "jak", "kolik", "proč", "nač", "dokud", "pokud", "nakolik", "načež", "pročež", "začež", "někde", "kdesi", "někdy", "kdysi", "nějak", "jaksi", "jakkoli", "jakkoliv", "koliksi", "všude", "vždy"]:
+        if lemma in constants.PRONOMINAL_ADVERBS:
             result = "adv:pro"
-        if lemma in ["nikde", "nikam", "nikudy", "nikdy", "nijak", "nikterak", "odnikud"]: # zájmenná záporná příslovce
+        if lemma in constants.NEGATIVE_PRONOMINAL_ADVERBS: # zájmenná záporná příslovce
             result = "adv:pro:neg"
     
     elif tag.startswith("R"):
@@ -312,10 +312,10 @@ def transform_tag(tag, word, lemma):
             
     if tag.startswith("V"):
         vid = "x_vid"
-        if lemma in ["stát", "lézt", "letět", "lítat", "volat", "nakupovat", "pracovat", "psát", "znát", "sedět", "čistit", "snídat", "zobat", "klapat", "vypadat", "papat", "ťukat", "kakat", "bolet", "spinkat", "čurat", "číst", "myslit", "plakat", "pást", "umět", "zpívat", "stydět", "běžet", "nést", "spát", "bydlet", "skákat", "volat", "držet", "natahovat", "smrdět", "zlobit", "bát", "štěkat", "potřebovat", "kutálet", "pomáhat", "ležet", "pít", "kreslit", "říkat", "jet", "chodit", "kousat", "začínat", "přestávat", "moci", "koupat", "mejt", "škrabat", "dělávat", "táhnout", "lízat", "stříhat", "kupovat", "hasit", "bláznit", "cenit", "vyrábět", "péci", "plašit", "vozit", "vézt", "lisovat", "zívat", "houpat", "čarovat", "zvětšovat", "koukat", "přemisťovat", "vědět", "líbit", "česat", "vidět", "dávat", "fungovat", "mít", "jít", "házet", "muset", "chybět", "dělat", "být", "chtít", "jíst"]:
-            vid = "impf" # some of the most common imperfective verbs
-        if lemma in ["pomoci", "zazpívat", "rozsvítit", "vyhrát", "přečíst", "povědět", "kouknout", "podívat", "sednout", "namočit", "skočit", "vyčurat", "ovázat", "sundat", "uletět", "udělat", "zabalit", "říci", "vyrůst", "vyletět", "lehnout", "rozbít", "vzít", "rozvázat", "spadnout", "zabít", "upadnout", "zůstat", "leknout", "zvednout", "umřít", "schovat", "sníst", "vstát", "vzbudit", "dostat", "začít", "pokakat", "roztrhat", "zalézt", "narodit", "pustit", "odnést", "nakoupit", "vyndat", "zahojit", "utrhnout", "přinést", "zmizet", "dát", "zkusit", "koupit", "ukázat", "počkat", "zavřít", "spojit", "přijít", "přijet", "otevřít"]:
-            vid = "pf" # some of the most common perfective verbs
+        if lemma in constants.IMPERFECTIVE_VERBS:
+            vid = "impf" 
+        if lemma in constants.PERFECTIVE_VERBS:
+            vid = "pf"
 
         if tag[3] == "S":
             cislo = "SG"
@@ -556,18 +556,18 @@ def zpracovat(text, tagger):
             elif word_list[i] == "zač":
                 result.append("prep_pro:int|za_co-4&SG&N")
             
-            elif word_list[i].endswith("bacashoogacit"):
-                new_word = word_list[i].replace("bacashoogacit", "")
+            elif word_list[i].endswith(constants.PLACEHOLDER_INTERJECTION):
+                new_word = word_list[i].replace(constants.PLACEHOLDER_INTERJECTION, "")
                 result.append("int|" + new_word)
 
             else: 
                 # lemmatizace my/náš/... ne jako já/můj/...
-                list_my = ["my", "nás", "nám", "námi", "náma"]
-                list_náš = ["náš", "našeho", "našemu", "našem", "naším", "naše", "naší", "našou", "naši", "našich", "našim", "našimi", "našima"]
-                list_vy = ["vy", "vás", "vám", "vámi", "váma"]
-                list_váš = ["váš", "vašeho", "vašemu", "vašem", "vaším", "vaše", "vaší", "vašou", "vaši", "vašich", "vašim", "vašimi", "vašima"]
-                list_její = ["její", "jejího", "jejímu", "jejím", "jejích", "jejími", "jejíma"]
-                list_sum = list_my + list_náš + list_vy + list_váš + list_její + ["jeho", "jejich"]
+                list_my = constants.PERS_PRONOUN_1PL
+                list_náš = constants.POSS_PRONOUN_1PL
+                list_vy = constants.PERS_PRONOUN_2PL
+                list_váš = constants.POSS_PRONOUN_2PL
+                list_její = constants.POSS_PRONOUN_F_3SG
+                list_sum = list_my + list_náš + list_vy + list_váš + list_její + [constants.POSS_PRONOUN_M_N_3SG, constants.POSS_PRONOUN_3PL]
                 if word_list[i] not in list_sum:
                     result.append(pos_list[i] + "|" + lemma_list[i] + mark2 + new_tag)
                 else:
@@ -582,9 +582,9 @@ def zpracovat(text, tagger):
                         new_lemma = "váš"
                     if word_list[i] in list_její:
                         new_lemma = "její"
-                    if word_list[i] == "jeho":
+                    if word_list[i] == constants.POSS_PRONOUN_M_N_3SG:
                         new_lemma = "jeho"
-                    if word_list[i] == "jejich":
+                    if word_list[i] == constants.POSS_PRONOUN_3PL:
                         new_lemma = "jejich"
                     result.append(pos_list[i] + "|" + new_lemma + mark2 + new_tag)
         if pos_list[i] == "Z":
