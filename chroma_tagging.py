@@ -143,10 +143,10 @@ def transform(input):
     result = re.sub(r"&[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+", "", result)
     
     # <xyz> [=? xxx]
-    result = re.sub("\[\=\? [ aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+\]", "", result)
+    result = re.sub(r"\[\=\? [ aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+\]", "", result)
     
     # <xyz> [=! xxx]
-    result = re.sub("\[\=\! [ aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+\]", "", result)
+    result = re.sub(r"\[\=\! [ aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+\]", "", result)
     
     # remove all the remaining "<"s, "*"s, "[?]"s, and "[!]"s, e.g. "*CHI: chci  <žlutou> [?] kytku."
     result = result.replace("<", "").replace(">", "").replace("[?]", "").replace("[!]", "")
@@ -159,7 +159,7 @@ def transform(input):
     result = re.sub(r"\[x [0123456789]+ ?\]", "", result)
     
     # "přišels [:přišel jsi]" is to be analyzed as "přišel jsi"
-    result = re.sub("[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+ \[:", "", result)
+    result = re.sub(r"[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+ \[:", "", result)
     result = result.replace("]", "")
     
     # token ending in @i, @z:ip, @z:ia, @z:in = to be tagged as an interjection
