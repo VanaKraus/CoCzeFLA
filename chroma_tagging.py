@@ -43,6 +43,8 @@ files with this script is thus rather slow), even though it thus this job as wel
 
 """
 
+import constants
+
 from corpy.morphodita import Tagger
 
 import argparse
@@ -162,15 +164,15 @@ def transform(input):
     
     # token ending in @i, @z:ip, @z:ia, @z:in = to be tagged as an interjection
     # bacashooga is a random string not overlapping with any existing Czech words
-    result = result.replace("@i", "bacashoogacit")
-    result = result.replace("@z:ip", "bacashoogacit")
-    result = result.replace("@z:ia", "bacashoogacit")
-    result = result.replace("@z:in", "bacashoogacit")
+    result = result.replace("@i", constants.PLACEHOLDER_INTERJECTION)
+    result = result.replace("@z:ip", constants.PLACEHOLDER_INTERJECTION)
+    result = result.replace("@z:ia", constants.PLACEHOLDER_INTERJECTION)
+    result = result.replace("@z:in", constants.PLACEHOLDER_INTERJECTION)
     # token ending in @c, @n = tag is to end with -neo
-    result = result.replace("@c", "bacashoogachi")
-    result = result.replace("@n", "bacashoogachi")
+    result = result.replace("@c", constants.PLACEHOLDER_NEOLOGISM)
+    result = result.replace("@n", constants.PLACEHOLDER_NEOLOGISM)
     # token ending in @z:c = tag is to end with -ciz
-    result = result.replace("@z:c", "bacashoogaciz")
+    result = result.replace("@z:c", constants.PLACEHOLDER_CIZ)
     # the function zpracovat() will later re-tag these appropriately
     
     # if the result consists only of spaces or punctuation marks, return "NA"
@@ -440,25 +442,25 @@ this function assures that tokens with the placeholders starting with the string
 """
 
 def zpracovat(text, tagger):
-    if ("bacashoogachi" in text) or ("bacashoogaciz" in text):
+    if (constants.PLACEHOLDER_NEOLOGISM in text) or (constants.PLACEHOLDER_CIZ in text):
         caution = True
         chi = []
         ciz = []
         seznam_slov = []
         for word in text.split(" "):
-            if word.endswith("bacashoogachi"):
+            if word.endswith(constants.PLACEHOLDER_NEOLOGISM):
                 chi.append(True)
                 ciz.append(False)
-                seznam_slov.append(word.replace("bacashoogachi", ""))
-            elif word.endswith("bacashoogaciz"):
+                seznam_slov.append(word.replace(constants.PLACEHOLDER_NEOLOGISM, ""))
+            elif word.endswith(constants.PLACEHOLDER_CIZ):
                 ciz.append(True)
                 chi.append(False)
-                seznam_slov.append(word.replace("bacashoogaciz", ""))
+                seznam_slov.append(word.replace(constants.PLACEHOLDER_CIZ, ""))
             else:
                 chi.append(False)
                 ciz.append(False)
                 seznam_slov.append(word)
-        text = text.replace("bacashoogachi", "").replace("bacashoogaciz", "")
+        text = text.replace(constants.PLACEHOLDER_NEOLOGISM, "").replace(constants.PLACEHOLDER_CIZ, "")
     else:
         caution = False
 
@@ -651,7 +653,7 @@ _tagger = None
 def _get_tagger():
     global _tagger
     if _tagger is None:
-        _tagger = Tagger("_local/czech-morfflex2.0-pdtc1.0-220710/czech-morfflex2.0-pdtc1.0-220710.tagger")
+        _tagger = Tagger(constants.TAGGER_PATH)
     return _tagger
                         
 """
