@@ -44,6 +44,8 @@ files with this script is thus rather slow), even though it thus this job as wel
 """
 
 import constants
+import replacement_rules
+import word_definitions as words
 
 from corpy.morphodita import Tagger
 
@@ -81,111 +83,16 @@ example of output: 'toho vybarvování .'
 """
 
 def transform(input):
-    if input.startswith("@"):
-        result = "NA"
-        return result
-    elif input.startswith("%"):
-        result = "NA"
-        return result 
-    elif input.startswith("*CHI:"):
-        result = input.replace("*CHI:	","")
-    elif input.startswith("*MOT:"):
-        result = input.replace("*MOT:	","")
-    elif input.startswith("*FAT:"):
-        result = input.replace("*FAT:	","")
-    elif input.startswith("*GRA:"):
-        result = input.replace("*GRA:	","")
-    elif input.startswith("*SIS:"):
-        result = input.replace("*SIS:	","")
-    elif input.startswith("*SIT:"):
-        result = input.replace("*SIT:	","")
-    elif input.startswith("*BRO:"):
-        result = input.replace("*BRO:	","")
-    elif input.startswith("*ADU:"):
-        result = input.replace("*ADU:	","")
-    else:
-        result = input
+    if input.startswith(("@", "%")):
+        return "NA"
     
-    # interjections with underscores
-    result = result.replace("_", "")
-    
-    # lengthened vowels
-    result = result.replace("e:","e").replace("a:","a").replace("i:","i").replace("y:","y").replace("o:","o").replace("u:","u").replace("á:","á").replace("é:","é").replace("ě:","ě").replace("í:","í").replace("ý:","ý").replace("ó:","ó").replace("ú:","ú").replace("ů:","ů").replace("r:","r").replace("s:","s").replace("š:","š")
-    
-    # remove "^", "(.)", "[*]"
-    result = result.replace("^", "").replace("(.)","").replace("[*]", "")
-    
-    # remove "xxx", "yyy"
-    result = result.replace("xxx", "").replace("yyy", "")
+    result = input
 
-    # remove "+<" from the beginning of lines
-    result = result.replace("+<", "")
+    for rule in replacement_rules.TRANSFORM_REGEX:
+        result = re.sub(rule[0], rule[1], result)
 
-    # remove all material between "&" and ">", e.g. in "<v &po> [//] v postýlce"
-    result = re.sub(r"&[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+>", ">", result)
-        
-    # remove "<xyz>" followed by "[/]", "[//]" or e.g. "[=! básnička]"
-    # e.g. [básnička = poem]: *CHI:	<máme_tady_xxx_a_pěkný_bububínek_je_tam_jedno_kůzlátko_a_už_nevylezlo> [=! básnička].
-    result = re.sub(r"<[ aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+> \[//\]", "", result)
-    result = re.sub(r"<[ aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+> \[/\]", "", result)
-    result = re.sub(r"<[ _aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+> \[=! básnička\]", "", result)
-    result = re.sub(r"<[ _aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+> \[=! písnička\]", "", result)
-    result = re.sub(r"<[ _aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+> \[=! zpěv\]", "", result)
-    
-    # renove all material between "&=" and a space, including cases such as "&=imit:xxx"
-    # e.g. "*CHI:	jenže ten traktor najednou &=imit:rána."
-    result = re.sub(r"&=[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž:AÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+", "", result)
-    
-    # remove all material between "0" and a space
-    result = re.sub(r"0[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+", "", result)
-    
-    # remove all material between "&" and a space, e.g. "*MOT:	toho &vybavová vybarvování."
-    result = re.sub(r"&[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+", "", result)
-    
-    # <xyz> [=? xxx]
-    result = re.sub(r"\[\=\? [ aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+\]", "", result)
-    
-    # <xyz> [=! xxx]
-    result = re.sub(r"\[\=\! [ aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+\]", "", result)
-    
-    # remove all the remaining "<"s, "*"s, "[?]"s, and "[!]"s, e.g. "*CHI: chci  <žlutou> [?] kytku."
-    result = result.replace("<", "").replace(">", "").replace("[?]", "").replace("[!]", "")
-    
-    # added: remove quote marks
-    result = result.replace("\"", "").replace("“", "").replace("”", "")
-    
-    # remove repetition marking, e.g. [x 2]
-    # an optional space after the number, because there was a line with "[x 4 ] ." at which the script broke down
-    result = re.sub(r"\[x [0123456789]+ ?\]", "", result)
-    
-    # "přišels [:přišel jsi]" is to be analyzed as "přišel jsi"
-    result = re.sub(r"[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+ \[:", "", result)
-    result = result.replace("]", "")
-    
-    # token ending in @i, @z:ip, @z:ia, @z:in = to be tagged as an interjection
-    # bacashooga is a random string not overlapping with any existing Czech words
-    result = result.replace("@i", constants.PLACEHOLDER_INTERJECTION)
-    result = result.replace("@z:ip", constants.PLACEHOLDER_INTERJECTION)
-    result = result.replace("@z:ia", constants.PLACEHOLDER_INTERJECTION)
-    result = result.replace("@z:in", constants.PLACEHOLDER_INTERJECTION)
-    # token ending in @c, @n = tag is to end with -neo
-    result = result.replace("@c", constants.PLACEHOLDER_NEOLOGISM)
-    result = result.replace("@n", constants.PLACEHOLDER_NEOLOGISM)
-    # token ending in @z:c = tag is to end with -ciz
-    result = result.replace("@z:c", constants.PLACEHOLDER_CIZ)
-    # the function zpracovat() will later re-tag these appropriately
-    
-    # if the result consists only of spaces or punctuation marks, return "NA"
-    alt_result = result
-    alt_result = re.sub("[ .,?!0+…]+", "", alt_result)
-    if alt_result == "":
-        result = "NA"
-        
-    # Nee > ne
-    result = result.replace("Nee","ne").replace("nee","ne")
-    
-    # formatting adjustment
-    result = result.replace("?", " ?").replace("!", " !").replace(".", " .").replace(",", " ,").replace("  ", " ")
+    for rule in replacement_rules.TRANSFORM_STR_REPLACE:
+        result = result.replace(rule[0], rule[1])
     
     return result
 
@@ -208,11 +115,11 @@ def pos(tag, word, lemma):
         result = "x"
     elif tag.startswith("N"):
         result = "n"
-        if lemma in constants.PLURAL_INVARIABLE_NOUNS: # pomnožná
+        if lemma in words.PLURAL_INVARIABLE_NOUNS: # pomnožná
             result = "n:pt" # plural invariable nouns
         if word == word.capitalize(): # proper nouns
             result = "n:prop"
-            if lemma in constants.PLURAL_INVARIABLE_PROPER_NOUNS: # a proper noun that is also a plural invariable noun
+            if lemma in words.PLURAL_INVARIABLE_PROPER_NOUNS: # a proper noun that is also a plural invariable noun
                 result = "n:prop:pt"
     elif tag.startswith("A"):
         result = "adj"
@@ -260,16 +167,16 @@ def pos(tag, word, lemma):
         
     elif tag.startswith("V"):
         result = "v"
-        if lemma in constants.MODAL_VERBS: # modal verbs
+        if lemma in words.MODAL_VERBS: # modal verbs
             result = "v:mod"
-        if lemma == constants.AUX:
+        if lemma == words.AUX:
             result = "v:aux/cop"
 
     elif tag.startswith("D"):
         result = "adv"
-        if lemma in constants.PRONOMINAL_ADVERBS:
+        if lemma in words.PRONOMINAL_ADVERBS:
             result = "adv:pro"
-        if lemma in constants.NEGATIVE_PRONOMINAL_ADVERBS: # zájmenná záporná příslovce
+        if lemma in words.NEGATIVE_PRONOMINAL_ADVERBS: # zájmenná záporná příslovce
             result = "adv:pro:neg"
     
     elif tag.startswith("R"):
@@ -312,9 +219,9 @@ def transform_tag(tag, word, lemma):
             
     if tag.startswith("V"):
         vid = "x_vid"
-        if lemma in constants.IMPERFECTIVE_VERBS:
+        if lemma in words.IMPERFECTIVE_VERBS:
             vid = "impf" 
-        if lemma in constants.PERFECTIVE_VERBS:
+        if lemma in words.PERFECTIVE_VERBS:
             vid = "pf"
 
         if tag[3] == "S":
@@ -562,12 +469,12 @@ def zpracovat(text, tagger):
 
             else: 
                 # lemmatizace my/náš/... ne jako já/můj/...
-                list_my = constants.PERS_PRONOUN_1PL
-                list_náš = constants.POSS_PRONOUN_1PL
-                list_vy = constants.PERS_PRONOUN_2PL
-                list_váš = constants.POSS_PRONOUN_2PL
-                list_její = constants.POSS_PRONOUN_F_3SG
-                list_sum = list_my + list_náš + list_vy + list_váš + list_její + [constants.POSS_PRONOUN_M_N_3SG, constants.POSS_PRONOUN_3PL]
+                list_my = words.PERS_PRONOUN_1PL
+                list_náš = words.POSS_PRONOUN_1PL
+                list_vy = words.PERS_PRONOUN_2PL
+                list_váš = words.POSS_PRONOUN_2PL
+                list_její = words.POSS_PRONOUN_F_3SG
+                list_sum = list_my + list_náš + list_vy + list_váš + list_její + [words.POSS_PRONOUN_M_N_3SG, words.POSS_PRONOUN_3PL]
                 if word_list[i] not in list_sum:
                     result.append(pos_list[i] + "|" + lemma_list[i] + mark2 + new_tag)
                 else:
@@ -582,15 +489,15 @@ def zpracovat(text, tagger):
                         new_lemma = "váš"
                     if word_list[i] in list_její:
                         new_lemma = "její"
-                    if word_list[i] == constants.POSS_PRONOUN_M_N_3SG:
+                    if word_list[i] == words.POSS_PRONOUN_M_N_3SG:
                         new_lemma = "jeho"
-                    if word_list[i] == constants.POSS_PRONOUN_3PL:
+                    if word_list[i] == words.POSS_PRONOUN_3PL:
                         new_lemma = "jejich"
                     result.append(pos_list[i] + "|" + new_lemma + mark2 + new_tag)
         if pos_list[i] == "Z":
             result.append(lemma_list[i])
         i += 1 
-    text = "%mor:\t" + " ".join(result) + "\n"
+    text = "%mor:\t" + " ".join(result)
     
     # small formal adjustments
     text = text.replace(", .", ".")
@@ -686,7 +593,7 @@ def main():
             os.makedirs(args.outdir[0])
         
         for file in args.inputfiles:
-            print(file)
+            print(file, file=sys.stderr)
             target_path = os.path.join(args.outdir[0], os.path.basename(file))
             annotate_file(file, target_path, _get_tagger())
     else:
