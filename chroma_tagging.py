@@ -48,7 +48,6 @@ import replacement_rules
 import word_definitions as words
 
 from corpy.morphodita import Tagger, Token, Tokenizer
-from nltk.tokenize import word_tokenize
 
 import argparse
 import re
