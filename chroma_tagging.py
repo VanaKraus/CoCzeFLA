@@ -47,7 +47,8 @@ import constants
 import replacement_rules
 import word_definitions as words
 
-from corpy.morphodita import Tagger
+from corpy.morphodita import Tagger, Token, Tokenizer
+from nltk.tokenize import word_tokenize
 
 import argparse
 import re
@@ -61,16 +62,20 @@ class CoCzeFLATaggerError(Exception):
 a function for using the MorphoDiTa tagger, see https://ufal.mff.cuni.cz/morphodita
 the directory needs to be adjusted
 
-example of use: tokenize("vidím Mařenku")
+example of use: tag("vidím Mařenku")
 → output = a list of Token objects: 
 [Token(word='vidím', lemma='vidět', tag='VB-S---1P-AA---'),
  Token(word='Mařenku', lemma='Mařenka', tag='NNFS4-----A----')]
 
 """
 
-def tokenize(text, tagger:Tagger):
+def tag(text, tagger:Tagger) -> list[Token]:
     output = list(tagger.tag(text, convert="strip_lemma_id"))
     return output
+
+# TODO: allow for custom tokenizer
+def tokenize(text:str) -> list[str]:
+    return list(Tokenizer('czech').tokenize(text))
 
 
 """
@@ -97,7 +102,7 @@ def transform(input):
     return result
 
 """
-input: (tag, word, lemma) provided in the Token object by tokenize()
+input: (tag, word, lemma) provided in the Token object by tag()
 extracts the POS information from the tag and returns the POS value in the MOR format
 lemma in the input as well, because of the tagging of plural invariable nouns
 word in the input as well, because of the tagging of proper names
@@ -199,7 +204,7 @@ def pos(tag, word, lemma):
 
 
 """ 
-input: (tag, word, lemma) provided in the Token object by tokenize()
+input: (tag, word, lemma) provided in the Token object by tag()
 extracts the morphological information from the tag and returns the morphological tag in the MOR format
 lemma & word in the input as well, because of the tagging of negation and verbal aspect
 
@@ -339,164 +344,62 @@ def transform_tag(tag, word, lemma):
     
     return result
 
+def _construct_mor_word(token:Token, pos_label:str, flags:dict[constants.tflag,]):
+    if pos_label == 'Z':
+        return token.lemma
+
+    if constants.tflag.interjection in flags:
+        return f'int|{token.word}'
+
+    if token.word in replacement_rules.MOR_WORDS_HARDCODED:
+        return replacement_rules.MOR_WORDS_HARDCODED[token.word]
+
+    new_tag = transform_tag(token.tag, token.word, token.lemma)
+    if new_tag == "":
+        new_tag = '-'
+
+    if constants.tflag.tag_extension in flags:
+        new_tag += flags[constants.tflag.tag_extension]
+    
+    lemma = token.lemma
+
+    # plural central pronouns to be lemmatized as e.g. "my" or "náš" rather than forms of "já" or "můj"
+    for lemma_override_rule in replacement_rules.MOR_WORDS_LEMMA_OVERRIDES:
+        if token.word in lemma_override_rule[0]:
+            lemma = lemma_override_rule[1]
+
+    return f'{pos_label}|{lemma}{new_tag}'
 
 """
 this function processes an input text
 the input text is supposed to be the result of the function transform()
 the function uses the functions pos() and transform_tag()
-this function assures that tokens with the placeholders starting with the string "bacashooga" are treated as required
+this function assures that tagged_tokens with the placeholders starting with the string "bacashooga" are treated as required
 
 """
 
-def zpracovat(text, tagger):
-    if (constants.PLACEHOLDER_NEOLOGISM in text) or (constants.PLACEHOLDER_CIZ in text):
-        caution = True
-        chi = []
-        ciz = []
-        seznam_slov = []
-        for word in text.split(" "):
-            if word.endswith(constants.PLACEHOLDER_NEOLOGISM):
-                chi.append(True)
-                ciz.append(False)
-                seznam_slov.append(word.replace(constants.PLACEHOLDER_NEOLOGISM, ""))
-            elif word.endswith(constants.PLACEHOLDER_CIZ):
-                ciz.append(True)
-                chi.append(False)
-                seznam_slov.append(word.replace(constants.PLACEHOLDER_CIZ, ""))
-            else:
-                chi.append(False)
-                ciz.append(False)
-                seznam_slov.append(word)
-        text = text.replace(constants.PLACEHOLDER_NEOLOGISM, "").replace(constants.PLACEHOLDER_CIZ, "")
-    else:
-        caution = False
+def mor_line(text, tagger):
+    flags:list[dict[constants.tflag,]] = []
+    for word in tokenize(text):
+        flag = {}
+        if word.endswith(constants.PLACEHOLDER_NEOLOGISM):
+            flag[constants.tflag.tag_extension] = '-neo'
+        elif word.endswith(constants.PLACEHOLDER_CIZ):
+            flag[constants.tflag.tag_extension] = '-ciz'
+        elif word.endswith(constants.PLACEHOLDER_INTERJECTION):
+            flag[constants.tflag.interjection] = True
+        flags.append(flag)
+    
+    text = text.replace(constants.PLACEHOLDER_NEOLOGISM, "").replace(constants.PLACEHOLDER_CIZ, "").replace(constants.PLACEHOLDER_INTERJECTION, "")
 
-    result = tokenize(text, tagger)
-    word_list = []
-    pos_list = []
-    tag_list = []
-    lemma_list = []
-    for item in result:
-        word_list.append(item[0])
-        lemma_list.append(item[1])
-        tag_list.append(item[2])
-        pos_list.append(pos(item[2], item[0], item[1]))
-    i = 0
-    result = []
-    while i < len(word_list):
-        if pos_list[i] != "Z":
-            new_tag = transform_tag(tag_list[i], word_list[i], lemma_list[i])
-            if new_tag == "":
-                mark2 = ""
-            else:
-                mark2 = "-"
-            
-            if caution == True: 
-                if word_list[i] in seznam_slov:
-                    index = seznam_slov.index(word_list[i])
-                    if chi[index] == True:
-                        new_tag += "-neo"
-                    if ciz[index] == True:
-                        new_tag += "-ciz"
-            
-            # lexically specified "exceptions": "mami" always to be tagged as "n|máma-5&SG&F" etc.
-            if word_list[i] == "mami":
-                result.append("n|máma-5&SG&F")
-            elif word_list[i] == "no":
-                result.append("part|no")
-            elif word_list[i] == "koukej":
-                result.append("v|koukat-2&SG&imp&akt&impf")
-            elif word_list[i] == "zzz":
-                result.append("x|zzz")
-            
-            # forms of "rád" to be tagged as follows
-            elif word_list[i] == "rád":
-                result.append("adj:short|rád-1&SG&M")
-            elif word_list[i] == "ráda":
-                result.append("adj:short|rád-1&SG&F")
-            elif word_list[i] == "rádo":
-                result.append("adj:short|rád-1&SG&N")
-            elif word_list[i] == "rádi":
-                result.append("adj:short|rád-1&PL&M")
-            elif word_list[i] == "rády":
-                result.append("adj:short|rád-1&PL&F")
+    tagged_tokens:list[Token] = tag(text, tagger)
+    pos_labels:list[str] = [pos(token.tag, token.word, token.lemma) for token in tagged_tokens]
+    result:list[str] = []
 
-            # reflexive pronouns "se" and "si" to be tagged as follows
-            elif word_list[i] == "se":
-                result.append("pro:refl|se-4&SG")
-            elif word_list[i] == "si":
-                result.append("pro:refl|se-3&SG")
-                
-            # the uninflected "jejichž" to be tagged as follows
-            elif word_list[i] == "jejichž":
-                result.append("pro:rel:poss|jejichž-x_pad&x_cislo&x_jmenny_rod")
-                
-            # double lemmatization for forms of "aby.*" and "kdyby.*" + "ses", "sis", and "zač"
-            elif word_list[i] == "abych":
-                result.append("conj:sub_v:aux|aby_být-1&SG&cond&akt&impf")
-            elif word_list[i] == "abys":
-                result.append("conj:sub_v:aux|aby_být-2&SG&cond&akt&impf")
-            elif word_list[i] == "aby":
-                result.append("conj:sub_v:aux|aby_být-1&x_cislo&cond&akt&impf")
-            elif word_list[i] == "abychom":
-                result.append("conj:sub_v:aux|aby_být-1&PL&cond&akt&impf")
-            elif word_list[i] == "abyste":
-                result.append("conj:sub_v:aux|aby_být-2&PL&cond&akt&impf")
-            elif word_list[i] == "abysme":
-                result.append("conj:sub_v:aux|aby_být-1&PL&cond&akt&impf")
-            elif word_list[i] == "kdybych":
-                result.append("conj:sub_v:aux|aby_být-1&SG&cond&akt&impf")
-            elif word_list[i] == "kdybys":
-                result.append("conj:sub_v:aux|aby_být-2&SG&cond&akt&impf")
-            elif word_list[i] == "kdyby":
-                result.append("conj:sub_v:aux|aby_být-1&x_cislo&cond&akt&impf")
-            elif word_list[i] == "kdybychom":
-                result.append("conj:sub_v:aux|aby_být-1&PL&cond&akt&impf")
-            elif word_list[i] == "kdybysme":
-                result.append("conj:sub_v:aux|aby_být-1&PL&cond&akt&impf")
-            elif word_list[i] == "kdybyste":
-                result.append("conj:sub_v:aux|aby_být-2&PL&cond&akt&impf")
-            elif word_list[i] == "ses":
-                result.append("pro:refl_v:aux|se_být-4&SG_2&SG&ind&pres&akt&impf")
-            elif word_list[i] == "sis":
-                result.append("pro:refl_v:aux|se_být-3&SG_2&SG&ind&pres&akt&impf")
-            elif word_list[i] == "zač":
-                result.append("prep_pro:int|za_co-4&SG&N")
-            
-            elif word_list[i].endswith(constants.PLACEHOLDER_INTERJECTION):
-                new_word = word_list[i].replace(constants.PLACEHOLDER_INTERJECTION, "")
-                result.append("int|" + new_word)
+    print(f'{text}\n{len(tagged_tokens)}, {len(pos_labels)}, {len(flags)}', file=sys.stderr)
 
-            else: 
-                # lemmatizace my/náš/... ne jako já/můj/...
-                list_my = words.PERS_PRONOUN_1PL
-                list_náš = words.POSS_PRONOUN_1PL
-                list_vy = words.PERS_PRONOUN_2PL
-                list_váš = words.POSS_PRONOUN_2PL
-                list_její = words.POSS_PRONOUN_F_3SG
-                list_sum = list_my + list_náš + list_vy + list_váš + list_její + [words.POSS_PRONOUN_M_N_3SG, words.POSS_PRONOUN_3PL]
-                if word_list[i] not in list_sum:
-                    result.append(pos_list[i] + "|" + lemma_list[i] + mark2 + new_tag)
-                else:
-                # plural central pronouns to be lemmatized as e.g. "my" or "náš" rather than forms of "já" or "můj"
-                    if word_list[i] in list_my:
-                        new_lemma = "my"
-                    if word_list[i] in list_náš:
-                        new_lemma = "náš"
-                    if word_list[i] in list_vy:
-                        new_lemma = "vy"
-                    if word_list[i] in list_váš:
-                        new_lemma = "váš"
-                    if word_list[i] in list_její:
-                        new_lemma = "její"
-                    if word_list[i] == words.POSS_PRONOUN_M_N_3SG:
-                        new_lemma = "jeho"
-                    if word_list[i] == words.POSS_PRONOUN_3PL:
-                        new_lemma = "jejich"
-                    result.append(pos_list[i] + "|" + new_lemma + mark2 + new_tag)
-        if pos_list[i] == "Z":
-            result.append(lemma_list[i])
-        i += 1 
+    for i in range(len(tagged_tokens)):
+        result.append(_construct_mor_word(tagged_tokens[i], pos_labels[i], flags[i]))
     text = "%mor:\t" + " ".join(result)
     
     # small formal adjustments
@@ -552,7 +455,7 @@ def annotate_filestream(source_fs, target_fs, tagger:Tagger):
                     target_fs.write("\n")
                 else:
                     target_fs.write("\n")
-                    target_fs.write(zpracovat(transform(line), tagger))
+                    target_fs.write(mor_line(transform(line), tagger))
             elif transform(line) == "NA":
                 target_fs.write("\n")
 

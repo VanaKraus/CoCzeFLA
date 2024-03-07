@@ -1,4 +1,5 @@
 import constants
+import word_definitions as words
 
 TRANSFORM_REGEX = [
     # remove participant roles from the start of lines
@@ -71,7 +72,7 @@ TRANSFORM_STR_REPLACE = [
     ("@n", constants.PLACEHOLDER_NEOLOGISM),
     # token ending in @z:c = tag is to end with -ciz
     ("@z:c", constants.PLACEHOLDER_CIZ),
-    # the function zpracovat() will later re-tag these appropriately
+    # the function mor_line() will later re-tag these appropriately
 
     # Nee > ne
     ("Nee","ne"),
@@ -83,4 +84,56 @@ TRANSFORM_STR_REPLACE = [
     (".", " ."),
     (",", " ,"),
     ("  ", " ")
+]
+
+MOR_WORDS_HARDCODED = {
+    # lexically specified "exceptions": "mami" always to be tagged as "n|máma-5&SG&F" etc.
+    "mami": "n|máma-5&SG&F",
+    "no": "part|no",
+    "koukej": "v|koukat-2&SG&imp&akt&impf",
+    "zzz": "x|zzz",
+    
+    # forms of "rád" to be tagged as follows
+    "rád": "adj:short|rád-1&SG&M",
+    "ráda": "adj:short|rád-1&SG&F",
+    "rádo": "adj:short|rád-1&SG&N",
+    "rádi": "adj:short|rád-1&PL&M",
+    "rády": "adj:short|rád-1&PL&F",
+
+    # reflexive pronouns "se" and "si" to be tagged as follows
+    "se": "pro:refl|se-4&SG",
+    "si": "pro:refl|se-3&SG",
+        
+    # the uninflected "jejichž" to be tagged as follows
+    "jejichž": "pro:rel:poss|jejichž-x_pad&x_cislo&x_jmenny_rod",
+        
+    # double lemmatization for forms of "aby.*" and "kdyby.*" + "ses", "sis", and "zač"
+    "abych": "conj:sub_v:aux|aby_být-1&SG&cond&akt&impf",
+    "abys": "conj:sub_v:aux|aby_být-2&SG&cond&akt&impf",
+    "aby": "conj:sub_v:aux|aby_být-1&x_cislo&cond&akt&impf",
+    "abychom": "conj:sub_v:aux|aby_být-1&PL&cond&akt&impf",
+    "abyste": "conj:sub_v:aux|aby_být-2&PL&cond&akt&impf",
+    "abysme": "conj:sub_v:aux|aby_být-1&PL&cond&akt&impf",
+    "kdybych": "conj:sub_v:aux|aby_být-1&SG&cond&akt&impf",
+    "kdybys": "conj:sub_v:aux|aby_být-2&SG&cond&akt&impf",
+    "kdyby": "conj:sub_v:aux|aby_být-1&x_cislo&cond&akt&impf",
+    "kdybychom": "conj:sub_v:aux|aby_být-1&PL&cond&akt&impf",
+    "kdybysme": "conj:sub_v:aux|aby_být-1&PL&cond&akt&impf",
+    "kdybyste": "conj:sub_v:aux|aby_být-2&PL&cond&akt&impf",
+    "ses": "pro:refl_v:aux|se_být-4&SG_2&SG&ind&pres&akt&impf",
+    "sis": "pro:refl_v:aux|se_být-3&SG_2&SG&ind&pres&akt&impf",
+    "zač": "prep_pro:int|za_co-4&SG&N"
+}
+
+# tuple: (list of forms, target lemma)
+MOR_WORDS_LEMMA_OVERRIDES = [
+    (l_list, l_list[0]) for l_list in [
+        words.PERS_PRONOUN_1PL,
+        words.PERS_PRONOUN_2PL,
+        words.POSS_PRONOUN_1PL,
+        words.POSS_PRONOUN_2PL,
+        words.POSS_PRONOUN_3PL,
+        words.POSS_PRONOUN_M_N_3SG,
+        words.POSS_PRONOUN_F_3SG
+    ]
 ]
