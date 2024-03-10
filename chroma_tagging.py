@@ -504,23 +504,20 @@ def annotate_filestream(
     tokenizer: Tokenizer = _get_tokenizer(),
 ):
     for line in source_fs:
-        target_fs.write(mezera_interpunkce(line))
+        line = line.strip("\n")
+        print(mezera_interpunkce(line), file=target_fs)
         if line != "":
-            if transform(line) != "NA":
-                if (
-                    transform(line) == "."
-                    or transform(line) == "0 ."
-                    or transform(line) == "nee ."
-                    or transform(line) == "emem ."
-                    or transform(line) == "mhm ."
-                    or transform(line) == "hm ."
-                ):
-                    target_fs.write("\n")
-                else:
-                    target_fs.write("\n")
-                    target_fs.write(mor_line(transform(line), tagger, tokenizer))
-            elif transform(line) == "NA":
-                target_fs.write("\n")
+            line_transformed = transform(line)
+            if not line_transformed in [
+                "NA",
+                ".",
+                "0 .",
+                "nee .",
+                "emem .",
+                "mhm .",
+                "hm .",
+            ]:
+                print(mor_line(transform(line), tagger, tokenizer), file=target_fs)
 
 
 """
