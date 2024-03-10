@@ -372,9 +372,7 @@ def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tfla
     if token.word in replacement_rules.MOR_WORDS_HARDCODED:
         return replacement_rules.MOR_WORDS_HARDCODED[token.word]
 
-    new_tag = transform_tag(token.tag, token.word, token.lemma)
-    if new_tag == "":
-        new_tag = "-"
+    new_tag = f"-{transform_tag(token.tag, token.word, token.lemma)}".rstrip("-")
 
     if constants.tflag.tag_extension in flags:
         new_tag += flags[constants.tflag.tag_extension]
