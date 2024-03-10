@@ -130,7 +130,7 @@ extracts the POS information from the tag and returns the POS value in the MOR f
 lemma in the input as well, because of the tagging of plural invariable nouns
 word in the input as well, because of the tagging of proper names
 
-example of use: pos("NNFS4-----A----", "Mařenku", "Mařenka")
+example of use: pos_mor("NNFS4-----A----", "Mařenku", "Mařenka")
 → output: 'n:prop'
 
 """
@@ -392,7 +392,7 @@ def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tfla
 """
 this function processes an input text
 the input text is supposed to be the result of the function chat_to_plain_text()
-the function uses the functions pos() and transform_tag()
+the function uses the functions pos_mor() and transform_tag()
 this function assures that tagged_tokens with the placeholders starting with the string "bacashooga" are treated as required
 
 """
