@@ -1,7 +1,7 @@
 import constants
 import word_definitions as words
 
-TRANSFORM_REGEX = [
+CHAT_TO_PLAIN_TEXT = [
     # remove participant roles from the start of lines
     (r"\*(CHI|MOT|FAT|GRA|SIS|SIT|BRO|ADU):\t", ""),
     # remove all material between "&" and ">", e.g. in "<v &po> [//] v postýlce"
@@ -45,50 +45,47 @@ TRANSFORM_REGEX = [
     ),
     # lengthened vowels
     (r"([eaiyouáéěíýóúůrsš]):", r"\1"),
-]
-
-TRANSFORM_STR_REPLACE = [
     # interjections with underscores
-    ("_", ""),
+    (r"_", r""),
     # remove "^", "(.)", "[*]"
-    ("^", ""),
-    ("(.)", ""),
-    ("[*]", ""),
+    (r"^", r""),
+    (r"\(.\)", r""),
+    (r"\[\*\]", r""),
     # remove "xxx", "yyy"
-    ("xxx", ""),
-    ("yyy", ""),
+    (r"xxx", r""),
+    (r"yyy", r""),
     # remove "+<" from the beginning of lines
-    ("+<", ""),
+    (r"\+<", ""),
     # remove all the remaining "<"s, "*"s, "[?]"s, and "[!]"s, e.g. "*CHI: chci  <žlutou> [?] kytku."
-    ("<", ""),
-    (">", ""),
-    ("[?]", ""),
-    ("[!]", ""),
+    (r"<", r""),
+    (r">", r""),
+    (r"\[\?\]", r""),
+    (r"\[\!\]", r""),
     # added: remove quote marks
-    ('"', ""),
-    ("“", ""),
-    ("”", ""),
+    (r'"', r""),
+    (r"“", r""),
+    (r"”", r""),
     # token ending in @i, @z:ip, @z:ia, @z:in = to be tagged as an interjection
     # bacashooga is a random string not overlapping with any existing Czech words
-    ("@i", constants.PLACEHOLDER_INTERJECTION),
-    ("@z:ip", constants.PLACEHOLDER_INTERJECTION),
-    ("@z:ia", constants.PLACEHOLDER_INTERJECTION),
-    ("@z:in", constants.PLACEHOLDER_INTERJECTION),
+    (r"@i", constants.PLACEHOLDER_INTERJECTION),
+    (r"@z:ip", constants.PLACEHOLDER_INTERJECTION),
+    (r"@z:ia", constants.PLACEHOLDER_INTERJECTION),
+    (r"@z:in", constants.PLACEHOLDER_INTERJECTION),
     # token ending in @c, @n = tag is to end with -neo
-    ("@c", constants.PLACEHOLDER_NEOLOGISM),
-    ("@n", constants.PLACEHOLDER_NEOLOGISM),
+    (r"@c", constants.PLACEHOLDER_NEOLOGISM),
+    (r"@n", constants.PLACEHOLDER_NEOLOGISM),
     # token ending in @z:c = tag is to end with -ciz
-    ("@z:c", constants.PLACEHOLDER_CIZ),
+    (r"@z:c", constants.PLACEHOLDER_CIZ),
     # the function mor_line() will later re-tag these appropriately
     # Nee > ne
-    ("Nee", "ne"),
-    ("nee", "ne"),
+    (r"Nee", r"ne"),
+    (r"nee", r"ne"),
     # formatting adjustment
-    ("?", " ?"),
-    ("!", " !"),
-    (".", " ."),
-    (",", " ,"),
-    ("  ", " "),
+    (r"\?", r" ?"),
+    (r"!", r" !"),
+    (r"\.", r" ."),
+    (r",", r" ,"),
+    (r"  ", r" "),
 ]
 
 MOR_WORDS_HARDCODED = {

@@ -101,7 +101,7 @@ def tokenize(text: str, tokenizer: Tokenizer = _get_tokenizer()) -> list[str]:
 
 """
 this function takes a corpus line in the CHAT (CHILDES) format as the input and transforms it into plain text
-if the line is not to be tagged (e.g. contains only a hesitation sound), the function returns the value "NA" instead
+if the line is not to be tagged (e.g. contains only a hesitation sound), the function returns None instead
 
 example of input: "*MOT:	toho &vybavová vybarvování."
 example of output: 'toho vybarvování .'
@@ -109,17 +109,17 @@ example of output: 'toho vybarvování .'
 """
 
 
-def transform(input):
-    if input.startswith(("@", "%")):
-        return "NA"
+def chat_to_plain_text(chat_line: str) -> str | None:
+    if chat_line == "" or chat_line.startswith(("@", "%")):
+        return None
 
-    result = input
+    result = chat_line
 
-    for rule in replacement_rules.TRANSFORM_REGEX:
+    for rule in replacement_rules.CHAT_TO_PLAIN_TEXT:
+        if result == "":
+            break
+
         result = re.sub(rule[0], rule[1], result)
-
-    for rule in replacement_rules.TRANSFORM_STR_REPLACE:
-        result = result.replace(rule[0], rule[1])
 
     return result
 
@@ -413,7 +413,7 @@ def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tfla
 
 """
 this function processes an input text
-the input text is supposed to be the result of the function transform()
+the input text is supposed to be the result of the function chat_to_plain_text()
 the function uses the functions pos() and transform_tag()
 this function assures that tagged_tokens with the placeholders starting with the string "bacashooga" are treated as required
 
@@ -504,20 +504,22 @@ def annotate_filestream(
     tokenizer: Tokenizer = _get_tokenizer(),
 ):
     for line in source_fs:
-        line = line.strip("\n")
+        line = line.strip(" \n")
         print(mezera_interpunkce(line), file=target_fs)
-        if line != "":
-            line_transformed = transform(line)
-            if not line_transformed in [
-                "NA",
-                ".",
-                "0 .",
-                "nee .",
-                "emem .",
-                "mhm .",
-                "hm .",
-            ]:
-                print(mor_line(transform(line), tagger, tokenizer), file=target_fs)
+        line_plain_text = chat_to_plain_text(line)
+        if not line_plain_text in [
+            None,
+            ".",
+            "0 .",
+            "nee .",
+            "emem .",
+            "mhm .",
+            "hm .",
+        ]:
+            print(
+                mor_line(line_plain_text, tagger, tokenizer),
+                file=target_fs,
+            )
 
 
 """
