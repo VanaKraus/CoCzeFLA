@@ -55,10 +55,6 @@ import sys
 import os
 
 
-class CoCzeFLATaggerError(Exception):
-    pass
-
-
 _tagger = None
 _tokenizer = None
 
@@ -94,7 +90,6 @@ def tag(text: str, tagger: Tagger = _get_tagger()) -> list[Token]:
     return output
 
 
-# TODO: allow for custom tokenizer
 def tokenize(text: str, tokenizer: Tokenizer = _get_tokenizer()) -> list[str]:
     return list(tokenizer.tokenize(text))
 
@@ -372,7 +367,11 @@ def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tfla
     if token.word in replacement_rules.MOR_WORDS_HARDCODED:
         return replacement_rules.MOR_WORDS_HARDCODED[token.word]
 
-    new_tag = f"-{transform_tag(token.tag, token.word, token.lemma)}".rstrip("-")
+    new_tag = (
+        f"-{_tag}"
+        if (_tag := transform_tag(token.tag, token.word, token.lemma)) != ""
+        else ""
+    )
 
     if constants.tflag.tag_extension in flags:
         new_tag += flags[constants.tflag.tag_extension]
