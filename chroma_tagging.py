@@ -54,8 +54,28 @@ import re
 import sys
 import os
 
+
 class CoCzeFLATaggerError(Exception):
     pass
+
+
+_tagger = None
+_tokenizer = None
+
+
+def _get_tagger() -> Tagger:
+    global _tagger
+    if _tagger is None:
+        _tagger = Tagger(constants.TAGGER_PATH)
+    return _tagger
+
+
+def _get_tokenizer() -> Tokenizer:
+    global _tokenizer
+    if _tokenizer is None:
+        _tokenizer = Tokenizer(constants.TOKENIZER_TYPE)
+    return _tokenizer
+
 
 """
 a function for using the MorphoDiTa tagger, see https://ufal.mff.cuni.cz/morphodita
@@ -68,13 +88,15 @@ example of use: tag("vidím Mařenku")
 
 """
 
-def tag(text, tagger:Tagger) -> list[Token]:
+
+def tag(text: str, tagger: Tagger = _get_tagger()) -> list[Token]:
     output = list(tagger.tag(text, convert="strip_lemma_id"))
     return output
 
+
 # TODO: allow for custom tokenizer
-def tokenize(text:str) -> list[str]:
-    return list(Tokenizer('czech').tokenize(text))
+def tokenize(text: str, tokenizer: Tokenizer = _get_tokenizer()) -> list[str]:
+    return list(tokenizer.tokenize(text))
 
 
 """
@@ -86,10 +108,11 @@ example of output: 'toho vybarvování .'
 
 """
 
+
 def transform(input):
     if input.startswith(("@", "%")):
         return "NA"
-    
+
     result = input
 
     for rule in replacement_rules.TRANSFORM_REGEX:
@@ -97,8 +120,9 @@ def transform(input):
 
     for rule in replacement_rules.TRANSFORM_STR_REPLACE:
         result = result.replace(rule[0], rule[1])
-    
+
     return result
+
 
 """
 input: (tag, word, lemma) provided in the Token object by tag()
@@ -111,6 +135,7 @@ example of use: pos("NNFS4-----A----", "Mařenku", "Mařenka")
 
 """
 
+
 def pos(tag, word, lemma):
     result = ""
     if tag.startswith("Z"):
@@ -119,11 +144,13 @@ def pos(tag, word, lemma):
         result = "x"
     elif tag.startswith("N"):
         result = "n"
-        if lemma in words.PLURAL_INVARIABLE_NOUNS: # pomnožná
-            result = "n:pt" # plural invariable nouns
-        if word == word.capitalize(): # proper nouns
+        if lemma in words.PLURAL_INVARIABLE_NOUNS:  # pomnožná
+            result = "n:pt"  # plural invariable nouns
+        if word == word.capitalize():  # proper nouns
             result = "n:prop"
-            if lemma in words.PLURAL_INVARIABLE_PROPER_NOUNS: # a proper noun that is also a plural invariable noun
+            if (
+                lemma in words.PLURAL_INVARIABLE_PROPER_NOUNS
+            ):  # a proper noun that is also a plural invariable noun
                 result = "n:prop:pt"
     elif tag.startswith("A"):
         result = "adj"
@@ -137,11 +164,16 @@ def pos(tag, word, lemma):
             result = "pro:dem"
         elif tag.startswith("PP") or tag.startswith("PH") or tag.startswith("P5"):
             result = "pro:pers"
-        elif tag.startswith("P1") or tag.startswith("P9") or tag.startswith("PE") or tag.startswith("PJ"):
+        elif (
+            tag.startswith("P1")
+            or tag.startswith("P9")
+            or tag.startswith("PE")
+            or tag.startswith("PJ")
+        ):
             result = "pro:rel"
         elif tag.startswith("PS"):
             result = "pro:poss"
-        elif tag.startswith("P8"): # svůj
+        elif tag.startswith("P8"):  # svůj
             result = "pro:poss"
         elif tag.startswith("P4") or tag.startswith("PK") or tag.startswith("PQ"):
             result = "pro:rel/int"
@@ -149,7 +181,7 @@ def pos(tag, word, lemma):
             result = "pro:neg"
         elif tag.startswith("PL") or tag.startswith("PZ"):
             result = "pro:indef"
-        elif tag.startswith("P6") or tag.startswith("P7"): # zvratná se, si...
+        elif tag.startswith("P6") or tag.startswith("P7"):  # zvratná se, si...
             result = "pro:refl"
         if lemma == "svůj":
             result = "pro:refl:poss"
@@ -168,10 +200,10 @@ def pos(tag, word, lemma):
             result = "num:indef"
         if word.endswith("krát") and lemma.endswith("krát"):
             result = "num:mult"
-        
+
     elif tag.startswith("V"):
         result = "v"
-        if lemma in words.MODAL_VERBS: # modal verbs
+        if lemma in words.MODAL_VERBS:  # modal verbs
             result = "v:mod"
         if lemma == words.AUX:
             result = "v:aux/cop"
@@ -180,9 +212,9 @@ def pos(tag, word, lemma):
         result = "adv"
         if lemma in words.PRONOMINAL_ADVERBS:
             result = "adv:pro"
-        if lemma in words.NEGATIVE_PRONOMINAL_ADVERBS: # zájmenná záporná příslovce
+        if lemma in words.NEGATIVE_PRONOMINAL_ADVERBS:  # zájmenná záporná příslovce
             result = "adv:pro:neg"
-    
+
     elif tag.startswith("R"):
         result = "prep"
     elif tag.startswith("J^"):
@@ -195,10 +227,10 @@ def pos(tag, word, lemma):
         result = "part"
     elif tag.startswith("I"):
         result = "int"
-    
+
     if lemma == "každý":
         result = "pro:indef"
-        
+
     return result
 
 
@@ -212,19 +244,20 @@ example of use: transform_tag("NNFS4-----A----", "Mařenku", "Mařenka")
 
 """
 
+
 def transform_tag(tag, word, lemma):
     mark = "&"
     result = ""
-    
-    if tag.startswith("V") and tag[10] == "N": # negation
+
+    if tag.startswith("V") and tag[10] == "N":  # negation
         result += "neg-"
     elif (word.startswith("ne") == True) and (lemma.startswith("ne") == False):
         result += "neg-"
-            
+
     if tag.startswith("V"):
         vid = "x_vid"
         if lemma in words.IMPERFECTIVE_VERBS:
-            vid = "impf" 
+            vid = "impf"
         if lemma in words.PERFECTIVE_VERBS:
             vid = "pf"
 
@@ -232,7 +265,7 @@ def transform_tag(tag, word, lemma):
             cislo = "SG"
         elif tag[3] == "P":
             cislo = "PL"
-        else: # the value "–": infinitive, auxiliary "být" in the conditional form
+        else:  # the value "–": infinitive, auxiliary "být" in the conditional form
             cislo = "x_cislo"
 
         if tag.startswith("Vs"):
@@ -252,19 +285,21 @@ def transform_tag(tag, word, lemma):
         else:
             jmrod = "x_jmenny_rod"
 
-        if tag.startswith("Vf"): # infinitive
+        if tag.startswith("Vf"):  # infinitive
             result += "inf" + mark + vid
-        elif tag.startswith("Vp"): # past participle
-            if word.endswith("la") and jmrod == "F": # feminine participles in -la obligatorily singular
+        elif tag.startswith("Vp"):  # past participle
+            if (
+                word.endswith("la") and jmrod == "F"
+            ):  # feminine participles in -la obligatorily singular
                 cislo = "SG"
             result += cislo + mark + "past" + mark + rod + mark + jmrod + mark + vid
-        elif tag.startswith("Vs"): # passive participle
+        elif tag.startswith("Vs"):  # passive participle
             result += cislo + mark + "pas" + mark + jmrod + mark + vid
-        
-        else: # if it is neither an infinitive nor a participle
+
+        else:  # if it is neither an infinitive nor a participle
             if tag[7] == "1" or tag[7] == "2" or tag[7] == "3":
                 result += tag[7]
-            else: # person not specified: infinitive, transgressive
+            else:  # person not specified: infinitive, transgressive
                 result += "x_osoba"
             result += mark + cislo
             if tag.startswith("Vc"):
@@ -278,11 +313,16 @@ def transform_tag(tag, word, lemma):
                 if tag[8] == "P":
                     result += mark + "pres"
                 elif tag[8] == "F":
-                    result += mark + "futur" 
+                    result += mark + "futur"
             result += mark + rod
             result += mark + vid
 
-    elif tag.startswith("N") or tag.startswith("A") or tag.startswith("P") or tag.startswith("C"):
+    elif (
+        tag.startswith("N")
+        or tag.startswith("A")
+        or tag.startswith("P")
+        or tag.startswith("C")
+    ):
         if tag[3] == "P":
             number = "PL"
         elif tag[3] == "S":
@@ -293,20 +333,20 @@ def transform_tag(tag, word, lemma):
             number = "x_cislo"
         if lemma in ["kdo", "co", "se"]:
             number = "SG"
-            
+
         if tag[4] != "X":
             pad = tag[4]
         else:
             pad = "x_pad"
         result += pad + mark + number
-        
+
         if tag.startswith("NNM"):
             result += mark + "MA"
         elif tag.startswith("NNI"):
             result += mark + "MI"
         elif lemma == "co":
             result += mark + "N"
-        else:        
+        else:
             if tag[2] == "I" or tag[2] == "Y":
                 result += mark + "M"
             elif tag[2] == "X":
@@ -314,13 +354,13 @@ def transform_tag(tag, word, lemma):
             else:
                 if tag[2] != "-":
                     result += mark + tag[2]
-    
+
         if tag.startswith("Cv"):
             result = ""
         if word.endswith("krát") and lemma.endswith("krát"):
             result = ""
-    
-    else: 
+
+    else:
         if result == "neg-":
             result = "neg"
         else:
@@ -331,35 +371,36 @@ def transform_tag(tag, word, lemma):
             result = "CP-" + result
         if tag[9] == "3":
             result = "SP-" + result
-    
+
     if tag.startswith("D"):
         if tag[9] == "2":
             result = "CP"
         if tag[9] == "3":
             result = "SP"
-            
+
     if tag.startswith("Cv"):
         result = ""
-    
+
     return result
 
-def _construct_mor_word(token:Token, pos_label:str, flags:dict[constants.tflag,]):
-    if pos_label == 'Z':
+
+def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tflag,]):
+    if pos_label == "Z":
         return token.lemma
 
     if constants.tflag.interjection in flags:
-        return f'int|{token.word}'
+        return f"int|{token.word}"
 
     if token.word in replacement_rules.MOR_WORDS_HARDCODED:
         return replacement_rules.MOR_WORDS_HARDCODED[token.word]
 
     new_tag = transform_tag(token.tag, token.word, token.lemma)
     if new_tag == "":
-        new_tag = '-'
+        new_tag = "-"
 
     if constants.tflag.tag_extension in flags:
         new_tag += flags[constants.tflag.tag_extension]
-    
+
     lemma = token.lemma
 
     # plural central pronouns to be lemmatized as e.g. "my" or "náš" rather than forms of "já" or "můj"
@@ -367,7 +408,8 @@ def _construct_mor_word(token:Token, pos_label:str, flags:dict[constants.tflag,]
         if token.word in lemma_override_rule[0]:
             lemma = lemma_override_rule[1]
 
-    return f'{pos_label}|{lemma}{new_tag}'
+    return f"{pos_label}|{lemma}{new_tag}"
+
 
 """
 this function processes an input text
@@ -377,35 +419,42 @@ this function assures that tagged_tokens with the placeholders starting with the
 
 """
 
-def mor_line(text, tagger):
-    flags:list[dict[constants.tflag,]] = []
-    for word in tokenize(text):
+
+def mor_line(
+    text, tagger: Tagger = _get_tagger(), tokenizer: Tokenizer = _get_tokenizer()
+):
+    flags: list[dict[constants.tflag,]] = []
+    for word in tokenize(text, tokenizer):
         flag = {}
         if word.endswith(constants.PLACEHOLDER_NEOLOGISM):
-            flag[constants.tflag.tag_extension] = '-neo'
+            flag[constants.tflag.tag_extension] = "-neo"
         elif word.endswith(constants.PLACEHOLDER_CIZ):
-            flag[constants.tflag.tag_extension] = '-ciz'
+            flag[constants.tflag.tag_extension] = "-ciz"
         elif word.endswith(constants.PLACEHOLDER_INTERJECTION):
             flag[constants.tflag.interjection] = True
         flags.append(flag)
-    
-    text = text.replace(constants.PLACEHOLDER_NEOLOGISM, "").replace(constants.PLACEHOLDER_CIZ, "").replace(constants.PLACEHOLDER_INTERJECTION, "")
 
-    tagged_tokens:list[Token] = tag(text, tagger)
-    pos_labels:list[str] = [pos(token.tag, token.word, token.lemma) for token in tagged_tokens]
-    result:list[str] = []
+    text = (
+        text.replace(constants.PLACEHOLDER_NEOLOGISM, "")
+        .replace(constants.PLACEHOLDER_CIZ, "")
+        .replace(constants.PLACEHOLDER_INTERJECTION, "")
+    )
 
-    print(f'{text}\n{len(tagged_tokens)}, {len(pos_labels)}, {len(flags)}', file=sys.stderr)
+    tagged_tokens: list[Token] = tag(text, tagger)
+    pos_labels: list[str] = [
+        pos(token.tag, token.word, token.lemma) for token in tagged_tokens
+    ]
+    result: list[str] = []
 
     for i in range(len(tagged_tokens)):
         result.append(_construct_mor_word(tagged_tokens[i], pos_labels[i], flags[i]))
     text = "%mor:\t" + " ".join(result)
-    
+
     # small formal adjustments
     text = text.replace(", .", ".")
     text = text.replace("\t, ", "\t")
     text = text.replace("+ . . .", "+…").replace("+ …", "+…").replace("+ / .", "+/.")
-    
+
     return text
 
 
@@ -415,6 +464,7 @@ a function for small formal adjustments WITHIN THE MAIN LINE, i.e., this is not 
 → changes +... to +…
 
 """
+
 
 def mezera_interpunkce(line):
     if line.endswith("+..."):
@@ -440,31 +490,39 @@ example of use: file_to_file("./test_files/aneta.txt", "./test_files/aneta_resul
 
 """
 
+
 def annotate_file(path, path_goal, tagger):
     with open(path, "r") as file:
         with open(path_goal, "a") as file_goal:
             annotate_filestream(file, file_goal, tagger)
 
-def annotate_filestream(source_fs, target_fs, tagger:Tagger):
+
+def annotate_filestream(
+    source_fs,
+    target_fs,
+    tagger: Tagger = _get_tagger(),
+    tokenizer: Tokenizer = _get_tokenizer(),
+):
     for line in source_fs:
         target_fs.write(mezera_interpunkce(line))
-        if line!= "":
+        if line != "":
             if transform(line) != "NA":
-                if transform(line) == "." or transform(line) == "0 ." or transform(line) == "nee ." or transform(line) == "emem ." or transform(line) == "mhm ." or transform(line) == "hm .":
+                if (
+                    transform(line) == "."
+                    or transform(line) == "0 ."
+                    or transform(line) == "nee ."
+                    or transform(line) == "emem ."
+                    or transform(line) == "mhm ."
+                    or transform(line) == "hm ."
+                ):
                     target_fs.write("\n")
                 else:
                     target_fs.write("\n")
-                    target_fs.write(mor_line(transform(line), tagger))
+                    target_fs.write(mor_line(transform(line), tagger, tokenizer))
             elif transform(line) == "NA":
                 target_fs.write("\n")
 
-_tagger = None                    
-def _get_tagger():
-    global _tagger
-    if _tagger is None:
-        _tagger = Tagger(constants.TAGGER_PATH)
-    return _tagger
-                        
+
 """
 to process all corpus files within a folder with the function file_to_file(), the following code was used
 (the folder here was named "Sara" and included all corpus files for the child nicknamed "Sara")
@@ -476,11 +534,22 @@ to process all corpus files within a folder with the function file_to_file(), th
 def main():
     # TODO: review
     parser = argparse.ArgumentParser(
-        description='Add morphological annotation according to the CoCzeFLA standards to a text file. REVIEW'
+        description="Add morphological annotation according to the CoCzeFLA standards to a text file. REVIEW"
     )
-    parser.add_argument('-s', '--std', action='store_true', help='receive/print input/output on stdin/stdout')
-    parser.add_argument('-o', '--outdir', nargs=1, type=str, help='directory where output files should be stored')
-    parser.add_argument('inputfiles', nargs='*', default=[])
+    parser.add_argument(
+        "-s",
+        "--std",
+        action="store_true",
+        help="receive/print input/output on stdin/stdout",
+    )
+    parser.add_argument(
+        "-o",
+        "--outdir",
+        nargs=1,
+        type=str,
+        help="directory where output files should be stored",
+    )
+    parser.add_argument("inputfiles", nargs="*", default=[])
 
     args = parser.parse_args(sys.argv[1:])
 
@@ -488,18 +557,24 @@ def main():
         annotate_filestream(sys.stdin, sys.stdout, _get_tagger())
     elif args.outdir:
         if len(args.inputfiles) == 0:
-            print('Please specify your input files. See --help for more.', file=sys.stderr)
+            print(
+                "Please specify your input files. See --help for more.", file=sys.stderr
+            )
             return
-        
+
         if not os.path.isdir(args.outdir[0]):
             os.makedirs(args.outdir[0])
-        
+
         for file in args.inputfiles:
             print(file, file=sys.stderr)
             target_path = os.path.join(args.outdir[0], os.path.basename(file))
             annotate_file(file, target_path, _get_tagger())
     else:
-        print('An output directory needs to be specified. See --help for more.', file=sys.stderr)
-        
-if __name__ == '__main__':
+        print(
+            "An output directory needs to be specified. See --help for more.",
+            file=sys.stderr,
+        )
+
+
+if __name__ == "__main__":
     main()
