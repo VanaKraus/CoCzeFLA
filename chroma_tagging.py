@@ -136,22 +136,19 @@ example of use: pos("NNFS4-----A----", "Mařenku", "Mařenka")
 """
 
 
-def pos(tag, word, lemma):
+def pos_mor(tag: str, word: str, lemma: str):
+    if lemma in replacement_rules.MOR_POS_OVERRIDES:
+        return replacement_rules.MOR_POS_OVERRIDES[lemma]
+
     result = ""
     if tag.startswith("Z"):
         result = "Z"
-    if tag.startswith("X"):
+    elif tag.startswith("X"):
         result = "x"
     elif tag.startswith("N"):
         result = "n"
-        if lemma in words.PLURAL_INVARIABLE_NOUNS:  # pomnožná
-            result = "n:pt"  # plural invariable nouns
         if word == word.capitalize():  # proper nouns
             result = "n:prop"
-            if (
-                lemma in words.PLURAL_INVARIABLE_PROPER_NOUNS
-            ):  # a proper noun that is also a plural invariable noun
-                result = "n:prop:pt"
     elif tag.startswith("A"):
         result = "adj"
         if tag.startswith("AC"):
@@ -173,20 +170,14 @@ def pos(tag, word, lemma):
             result = "pro:rel"
         elif tag.startswith("PS"):
             result = "pro:poss"
-        elif tag.startswith("P8"):  # svůj
-            result = "pro:poss"
         elif tag.startswith("P4") or tag.startswith("PK") or tag.startswith("PQ"):
             result = "pro:rel/int"
         elif tag.startswith("PW"):
             result = "pro:neg"
         elif tag.startswith("PL") or tag.startswith("PZ"):
             result = "pro:indef"
-        elif tag.startswith("P6") or tag.startswith("P7"):  # zvratná se, si...
+        elif tag.startswith("P6") or tag.startswith("P7"):  # relfexive se, si...
             result = "pro:refl"
-        if lemma == "svůj":
-            result = "pro:refl:poss"
-        if lemma == "čí":
-            result = "pro:int:poss"
 
     elif tag.startswith("C"):
         result = "num"
@@ -194,26 +185,16 @@ def pos(tag, word, lemma):
             result = "num:card"
         elif tag.startswith("Cr"):
             result = "num:ord"
-        elif tag.startswith("Cv"):
+        elif tag.startswith("Cv") or (word.endswith("krát") and lemma.endswith("krát")):
             result = "num:mult"
         elif tag.startswith("Ca"):
             result = "num:indef"
-        if word.endswith("krát") and lemma.endswith("krát"):
-            result = "num:mult"
 
     elif tag.startswith("V"):
         result = "v"
-        if lemma in words.MODAL_VERBS:  # modal verbs
-            result = "v:mod"
-        if lemma == words.AUX:
-            result = "v:aux/cop"
 
     elif tag.startswith("D"):
         result = "adv"
-        if lemma in words.PRONOMINAL_ADVERBS:
-            result = "adv:pro"
-        if lemma in words.NEGATIVE_PRONOMINAL_ADVERBS:  # zájmenná záporná příslovce
-            result = "adv:pro:neg"
 
     elif tag.startswith("R"):
         result = "prep"
@@ -227,9 +208,6 @@ def pos(tag, word, lemma):
         result = "part"
     elif tag.startswith("I"):
         result = "int"
-
-    if lemma == "každý":
-        result = "pro:indef"
 
     return result
 
@@ -442,7 +420,7 @@ def mor_line(
 
     tagged_tokens: list[Token] = tag(text, tagger)
     pos_labels: list[str] = [
-        pos(token.tag, token.word, token.lemma) for token in tagged_tokens
+        pos_mor(token.tag, token.word, token.lemma) for token in tagged_tokens
     ]
     result: list[str] = []
 

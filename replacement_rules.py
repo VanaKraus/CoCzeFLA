@@ -136,3 +136,20 @@ MOR_WORDS_LEMMA_OVERRIDES = [
         words.POSS_PRONOUN_F_3SG,
     ]
 ]
+
+# dict: {lemma: pos}
+MOR_POS_OVERRIDES = (
+    {lemma: "adv:pro" for lemma in words.PRONOMINAL_ADVERBS}
+    | {lemma: "adv:pro:neg" for lemma in words.NEGATIVE_PRONOMINAL_ADVERBS}
+    | {lemma: "n:pt" for lemma in words.PLURAL_INVARIABLE_NOUNS}
+    | {lemma: "n:prop:pt" for lemma in words.PLURAL_INVARIABLE_PROPER_NOUNS}
+    | {lemma: "v:mod" for lemma in words.MODAL_VERBS}
+    | {lemma: "adv:pro" for lemma in words.PRONOMINAL_ADVERBS}
+    | {lemma: "adv:pro:neg" for lemma in words.NEGATIVE_PRONOMINAL_ADVERBS}
+    | {
+        "každý": "pro:indef",
+        "svůj": "pro:refl:poss",
+        "čí": "pro:int:poss",
+        "být": "v:aux/cop",
+    }
+)

@@ -24,7 +24,6 @@ PLURAL_INVARIABLE_NOUNS = [
 ]
 PLURAL_INVARIABLE_PROPER_NOUNS = ["Prčice"]
 MODAL_VERBS = ["moci", "muset", "smět"]
-AUX = "být"
 PRONOMINAL_ADVERBS = [
     "tu",
     "někam",
