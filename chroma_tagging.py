@@ -219,76 +219,120 @@ example of use: transform_tag("NNFS4-----A----", "Mařenku", "Mařenka")
 
 
 def transform_tag(tag, word, lemma):
-    mark = "&"
+    def get_default(category: str) -> str:
+        print(
+            f"request default for {category} (tag: {tag}, word: {word}, lemma: {lemma})",
+            file=sys.stderr,
+        )
+        return constants.EMPTY_GRAM_CAT_DEFAULT[category]
+
+    # print(tag, file=sys.stderr)
+    delim = "&"
+    gram_categories = []
     result = ""
 
-    if tag.startswith("V") and tag[10] == "N":  # negation
-        result += "neg-"
-    elif (word.startswith("ne") == True) and (lemma.startswith("ne") == False):
+    # negation
+    if (tag.startswith("V") and tag[10] == "N") or (
+        word.startswith("ne") and not lemma.startswith("ne")
+    ):
         result += "neg-"
 
     if tag.startswith("V"):
-        vid = "x_vid"
+        form_type, aspect, number, voice, gender, person, mood, tense = (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+
         if lemma in words.IMPERFECTIVE_VERBS:
-            vid = "impf"
-        if lemma in words.PERFECTIVE_VERBS:
-            vid = "pf"
+            aspect = "impf"
+        elif lemma in words.PERFECTIVE_VERBS:
+            aspect = "pf"
+        else:
+            aspect = "x_vid"
 
         if tag[3] == "S":
-            cislo = "SG"
+            number = "SG"
         elif tag[3] == "P":
-            cislo = "PL"
-        else:  # the value "–": infinitive, auxiliary "být" in the conditional form
-            cislo = "x_cislo"
+            number = "PL"
+        # else: the value "–": infinitive, auxiliary "být" in the conditional form
 
         if tag.startswith("Vs"):
-            rod = "pas"
+            voice = "pas"
         elif tag[11] == "A":
-            rod = "akt"
-        else:
-            rod = "x_slovesny_rod"
+            voice = "akt"
 
         if tag[2] != "-":
             if tag[2] == "Y" or tag[2] == "M":
-                jmrod = "M"
+                gender = "M"
             elif tag[2] == "N":
-                jmrod = "N"
+                gender = "N"
+            elif tag[2] == "F":
+                gender = "F"
             else:
-                jmrod = "F"
+                gender = get_default("gender")
+
+        # infinitive
+        if tag.startswith("Vf"):
+            form_type = "inf"
+
+        # past participle
+        elif tag.startswith("Vp"):
+            tense = "past"
+            # feminine participles in -la obligatorily singular
+            if word.endswith("la") and gender == "F":
+                number = "SG"
+
+            if number is None:
+                number = get_default("number")
+            if voice is None:
+                voice = get_default("voice")
+
+        # passive participle
+        elif tag.startswith("Vs"):
+            if number is None:
+                number = get_default("number")
+            if voice is None:
+                voice = get_default("voice")
+
+        # if it is neither an infinitive nor a participle
         else:
-            jmrod = "x_jmenny_rod"
-
-        if tag.startswith("Vf"):  # infinitive
-            result += "inf" + mark + vid
-        elif tag.startswith("Vp"):  # past participle
-            if (
-                word.endswith("la") and jmrod == "F"
-            ):  # feminine participles in -la obligatorily singular
-                cislo = "SG"
-            result += cislo + mark + "past" + mark + rod + mark + jmrod + mark + vid
-        elif tag.startswith("Vs"):  # passive participle
-            result += cislo + mark + "pas" + mark + jmrod + mark + vid
-
-        else:  # if it is neither an infinitive nor a participle
+            # person
             if tag[7] == "1" or tag[7] == "2" or tag[7] == "3":
-                result += tag[7]
-            else:  # person not specified: infinitive, transgressive
-                result += "x_osoba"
-            result += mark + cislo
+                person = tag[7]
+
+            # mood & tense
             if tag.startswith("Vc"):
-                result += mark + "cond"
-                rod = "akt"
+                mood = "cond"
+                voice = "akt"
             elif tag.startswith("Vi"):
-                result += mark + "imp"
-                rod = "akt"
+                mood = "imp"
+                voice = "akt"
             else:
-                result += mark + "ind"
+                mood = "ind"
                 if tag[8] == "P":
-                    result += mark + "pres"
+                    tense = "pres"
                 elif tag[8] == "F":
-                    result += mark + "futur"
-            result += mark + rod
-            result += mark + vid
+                    tense = "futur"
+
+            if number is None:
+                number = get_default("number")
+
+        gram_categories += [
+            form_type,
+            person,
+            number,
+            mood,
+            tense,
+            voice,
+            gender,
+            aspect,
+        ]
 
     elif (
         tag.startswith("N")
@@ -311,22 +355,22 @@ def transform_tag(tag, word, lemma):
             pad = tag[4]
         else:
             pad = "x_pad"
-        result += pad + mark + number
+        result += pad + delim + number
 
         if tag.startswith("NNM"):
-            result += mark + "MA"
+            result += delim + "MA"
         elif tag.startswith("NNI"):
-            result += mark + "MI"
+            result += delim + "MI"
         elif lemma == "co":
-            result += mark + "N"
+            result += delim + "N"
         else:
             if tag[2] == "I" or tag[2] == "Y":
-                result += mark + "M"
+                result += delim + "M"
             elif tag[2] == "X":
-                result += mark + "x_jmenny_rod"
+                result += delim + "x_jmenny_rod"
             else:
                 if tag[2] != "-":
-                    result += mark + tag[2]
+                    result += delim + tag[2]
 
         if tag.startswith("Cv"):
             result = ""
@@ -338,6 +382,8 @@ def transform_tag(tag, word, lemma):
             result = "neg"
         else:
             result = ""
+
+    result += delim.join([el for el in gram_categories if not el is None])
 
     if tag.startswith("A"):
         if tag[9] == "2":
