@@ -20,9 +20,10 @@ class tflag(Enum):
 
 # default values for empty grammatical categories
 EMPTY_GRAM_CAT_DEFAULT = {
-    "aspect": "x_vid",
+    "case": "x_pad",
+    "person": "x_osoba",
     "number": "x_cislo",
     "voice": "x_slovesny_rod",
     "gender": "x_jmenny_rod",
-    "person": "x_osoba",
+    "aspect": "x_vid",
 }

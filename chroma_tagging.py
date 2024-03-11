@@ -207,6 +207,16 @@ def pos_mor(tag: str, word: str, lemma: str):
     return result
 
 
+def _get_default_gram_cat(
+    category: str, tag: str = None, word: str = None, lemma: str = None
+) -> str:
+    print(
+        f"transform_tag: request default for {category} (tag: {tag}, word: {word}, lemma: {lemma})",
+        file=sys.stderr,
+    )
+    return constants.EMPTY_GRAM_CAT_DEFAULT[category]
+
+
 """ 
 input: (tag, word, lemma) provided in the Token object by tag()
 extracts the morphological information from the tag and returns the morphological tag in the MOR format
@@ -219,42 +229,39 @@ example of use: transform_tag("NNFS4-----A----", "Mařenku", "Mařenka")
 
 
 def transform_tag(tag, word, lemma):
-    def get_default(category: str) -> str:
-        print(
-            f"request default for {category} (tag: {tag}, word: {word}, lemma: {lemma})",
-            file=sys.stderr,
-        )
-        return constants.EMPTY_GRAM_CAT_DEFAULT[category]
+    # delimiters for grammatical categories and for lexical categories
+    gr_delim, lex_delim = "&", "-"
 
-    # print(tag, file=sys.stderr)
-    delim = "&"
-    gram_categories = []
-    result = ""
+    # lexical categories
+    neg, comp_deg = None, None
+
+    # grammatical categories
+    form_type, case, person, number, mood, tense, voice, gender, aspect = (
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
 
     # negation
     if (tag.startswith("V") and tag[10] == "N") or (
         word.startswith("ne") and not lemma.startswith("ne")
     ):
-        result += "neg-"
+        neg = "neg"
 
+    # verbs
     if tag.startswith("V"):
-        form_type, aspect, number, voice, gender, person, mood, tense = (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
-
         if lemma in words.IMPERFECTIVE_VERBS:
             aspect = "impf"
         elif lemma in words.PERFECTIVE_VERBS:
             aspect = "pf"
         else:
-            aspect = "x_vid"
+            aspect = _get_default_gram_cat("aspect", tag, word, lemma)
 
         if tag[3] == "S":
             number = "SG"
@@ -275,7 +282,7 @@ def transform_tag(tag, word, lemma):
             elif tag[2] == "F":
                 gender = "F"
             else:
-                gender = get_default("gender")
+                gender = _get_default_gram_cat("gender", tag, word, lemma)
 
         # infinitive
         if tag.startswith("Vf"):
@@ -289,24 +296,22 @@ def transform_tag(tag, word, lemma):
                 number = "SG"
 
             if number is None:
-                number = get_default("number")
+                number = _get_default_gram_cat("number", tag, word, lemma)
             if voice is None:
-                voice = get_default("voice")
+                voice = _get_default_gram_cat("voice", tag, word, lemma)
 
         # passive participle
         elif tag.startswith("Vs"):
             if number is None:
-                number = get_default("number")
+                number = _get_default_gram_cat("number", tag, word, lemma)
             if voice is None:
-                voice = get_default("voice")
+                voice = _get_default_gram_cat("voice", tag, word, lemma)
 
         # if it is neither an infinitive nor a participle
         else:
-            # person
             if tag[7] == "1" or tag[7] == "2" or tag[7] == "3":
                 person = tag[7]
 
-            # mood & tense
             if tag.startswith("Vc"):
                 mood = "cond"
                 voice = "akt"
@@ -321,86 +326,73 @@ def transform_tag(tag, word, lemma):
                     tense = "futur"
 
             if number is None:
-                number = get_default("number")
-
-        gram_categories += [
-            form_type,
-            person,
-            number,
-            mood,
-            tense,
-            voice,
-            gender,
-            aspect,
-        ]
+                number = _get_default_gram_cat("number", tag, word, lemma)
 
     elif (
-        tag.startswith("N")
-        or tag.startswith("A")
-        or tag.startswith("P")
-        or tag.startswith("C")
+        (
+            tag.startswith("N")
+            or tag.startswith("A")
+            or tag.startswith("P")
+            or tag.startswith("C")
+        )
+        and not tag.startswith("Cv")
+        and not word.endswith("krát")
+        and not lemma.endswith("krát")
     ):
-        if tag[3] == "P":
-            number = "PL"
-        elif tag[3] == "S":
+        if tag[3] == "S" or lemma in ["kdo", "co", "se"]:
             number = "SG"
-        elif tag[3] == "D":
+        elif tag[3] == "P" or tag[3] == "D":
             number = "PL"
         else:
-            number = "x_cislo"
-        if lemma in ["kdo", "co", "se"]:
-            number = "SG"
+            number = _get_default_gram_cat("number", tag, word, lemma)
 
         if tag[4] != "X":
-            pad = tag[4]
+            case = tag[4]
         else:
-            pad = "x_pad"
-        result += pad + delim + number
+            case = _get_default_gram_cat("case", tag, word, lemma)
 
         if tag.startswith("NNM"):
-            result += delim + "MA"
+            gender = "MA"
         elif tag.startswith("NNI"):
-            result += delim + "MI"
+            gender = "MI"
         elif lemma == "co":
-            result += delim + "N"
-        else:
-            if tag[2] == "I" or tag[2] == "Y":
-                result += delim + "M"
-            elif tag[2] == "X":
-                result += delim + "x_jmenny_rod"
-            else:
-                if tag[2] != "-":
-                    result += delim + tag[2]
+            gender = "N"
+        elif tag[2] == "I" or tag[2] == "Y":
+            gender = "M"
+        elif tag[2] == "X":
+            gender = _get_default_gram_cat("gender", tag, word, lemma)
+        elif tag[2] != "-":
+            gender = tag[2]
 
-        if tag.startswith("Cv"):
-            result = ""
-        if word.endswith("krát") and lemma.endswith("krát"):
-            result = ""
-
-    else:
-        if result == "neg-":
-            result = "neg"
-        else:
-            result = ""
-
-    result += delim.join([el for el in gram_categories if not el is None])
-
-    if tag.startswith("A"):
+    if tag.startswith("A") or tag.startswith("D"):
         if tag[9] == "2":
-            result = "CP-" + result
+            comp_deg = "CP"
         if tag[9] == "3":
-            result = "SP-" + result
+            comp_deg = "SP"
 
-    if tag.startswith("D"):
-        if tag[9] == "2":
-            result = "CP"
-        if tag[9] == "3":
-            result = "SP"
+    gram_categories = [
+        form_type,
+        case,
+        person,
+        number,
+        mood,
+        tense,
+        voice,
+        gender,
+        aspect,
+    ]
 
-    if tag.startswith("Cv"):
-        result = ""
+    # join grammatical categories into one string
+    gr_joined = (
+        _jnd
+        if (_jnd := gr_delim.join([el for el in gram_categories if not el is None]))
+        != ""
+        else None
+    )
 
-    return result
+    lex_categories = [comp_deg, neg, gr_joined]
+
+    return lex_delim.join([el for el in lex_categories if not el is None])
 
 
 def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tflag,]):
