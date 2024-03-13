@@ -7,23 +7,23 @@ CHAT_TO_PLAIN_TEXT = [
     # remove "<xyz>" followed by "[/]", "[//]" or e.g. "[=! básnička]"
     # e.g. [básnička = poem]: *CHI:	<máme_tady_xxx_a_pěkný_bububínek_je_tam_jedno_kůzlátko_a_už_nevylezlo> [=! básnička].
     (
-        r"<[ &,_aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+> \[\/{1,2}|=! (básnička|písnička|zpěv)\]",
+        r"<[ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+> \[\/{1,2}|=! (básnička|písnička|zpěv)\]",
         "",
     ),
     # renove all material between "&=" and a space, including cases such as "&=imit:xxx"
     # e.g. "*CHI:	jenže ten traktor najednou &=imit:rána."
     (
-        r"&=[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž:AÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+",
+        r"&=[a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ:]+",
         "",
     ),
     # remove all material between "0" or "&" and first non-letter character, e.g. "*MOT:	toho &vybavová vybarvování."
     (
-        r"[0&][aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+",
+        r"[0&][a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+",
         "",
     ),
     # <xyz> [=? xxx] or <xyz> [=! xxx]
     (
-        r"\[\=[\?\!] [ aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+\]",
+        r"\[\=[\?\!] [ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+\]",
         "",
     ),
     # remove repetition marking, e.g. [x 2]
@@ -31,7 +31,7 @@ CHAT_TO_PLAIN_TEXT = [
     (r"\[x [0123456789]+ ?\]", ""),
     # "přišels [:přišel jsi]" is to be analyzed as "přišel jsi"
     (
-        r"[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+ \[:([ aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+)\]",
+        r"[a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+ \[:([ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)\]",
         r"\1",
     ),
     # lengthened vowels
