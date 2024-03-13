@@ -237,15 +237,7 @@ def transform_tag(tag, word, lemma):
 
     # grammatical categories
     form_type, case, person, number, mood, tense, voice, gender, aspect = (
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
+        None for _ in range(9)
     )
 
     # negation
