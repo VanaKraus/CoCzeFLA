@@ -4,19 +4,10 @@ import word_definitions as words
 CHAT_TO_PLAIN_TEXT = [
     # remove participant roles from the start of lines
     (r"\*(CHI|MOT|FAT|GRA|SIS|SIT|BRO|ADU):\t", ""),
-    # remove all material between "&" and ">", e.g. in "<v &po> [//] v postýlce"
-    (
-        r"&[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+>",
-        ">",
-    ),
     # remove "<xyz>" followed by "[/]", "[//]" or e.g. "[=! básnička]"
     # e.g. [básnička = poem]: *CHI:	<máme_tady_xxx_a_pěkný_bububínek_je_tam_jedno_kůzlátko_a_už_nevylezlo> [=! básnička].
     (
-        r"<[ &aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+> \[\/{1,2}\]",
-        "",
-    ),
-    (
-        r"<[ _aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+> \[=! (básnička|písnička|zpěv)\]",
+        r"<[ &,_aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+> \[\/{1,2}|=! (básnička|písnička|zpěv)\]",
         "",
     ),
     # renove all material between "&=" and a space, including cases such as "&=imit:xxx"
@@ -25,7 +16,7 @@ CHAT_TO_PLAIN_TEXT = [
         r"&=[aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzž:AÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+",
         "",
     ),
-    # remove all material between "0" or "&" and a space, e.g. "*MOT:	toho &vybavová vybarvování."
+    # remove all material between "0" or "&" and first non-letter character, e.g. "*MOT:	toho &vybavová vybarvování."
     (
         r"[0&][aábcčdďeéěfghiíjklmnňoópqrřsštťuúůvwxyýzžAÁBCČDĎEÉĚFGHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽ]+",
         "",
