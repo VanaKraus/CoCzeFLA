@@ -114,9 +114,9 @@ MOR_WORDS_HARDCODED = {
     "zač": "prep_pro:int|za_co-4&SG&N",
 }
 
-# tuple: (list of forms, target lemma)
-MOR_WORDS_LEMMA_OVERRIDES = [
-    (l_list, l_list[0])
+# dict: {word form: target lemma}
+MOR_WORDS_LEMMA_OVERRIDES = {
+    form: l_list[0]
     for l_list in [
         words.PERS_PRONOUN_1PL,
         words.PERS_PRONOUN_2PL,
@@ -126,7 +126,8 @@ MOR_WORDS_LEMMA_OVERRIDES = [
         words.POSS_PRONOUN_M_N_3SG,
         words.POSS_PRONOUN_F_3SG,
     ]
-]
+    for form in l_list
+}
 
 # dict: {lemma: pos}
 MOR_POS_OVERRIDES = (

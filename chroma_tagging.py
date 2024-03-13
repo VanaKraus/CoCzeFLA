@@ -415,9 +415,8 @@ def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tfla
     lemma = token.lemma
 
     # plural central pronouns to be lemmatized as e.g. "my" or "náš" rather than forms of "já" or "můj"
-    for lemma_override_rule in replacement_rules.MOR_WORDS_LEMMA_OVERRIDES:
-        if token.word in lemma_override_rule[0]:
-            lemma = lemma_override_rule[1]
+    if token.word in replacement_rules.MOR_WORDS_LEMMA_OVERRIDES:
+        lemma = replacement_rules.MOR_WORDS_LEMMA_OVERRIDES[token.word]
 
     return f"{pos_label}|{lemma}{new_tag}"
 
