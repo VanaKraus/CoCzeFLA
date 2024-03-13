@@ -54,6 +54,13 @@ import re
 import sys
 import os
 
+_verbose = False
+
+
+def _log(message: str):
+    if _verbose:
+        print(message, file=sys.stderr)
+
 
 _tagger = None
 _tokenizer = None
@@ -210,9 +217,8 @@ def pos_mor(tag: str, word: str, lemma: str):
 def _get_default_gram_cat(
     category: str, tag: str = None, word: str = None, lemma: str = None
 ) -> str:
-    print(
-        f"transform_tag: request default for {category} (tag: {tag}, word: {word}, lemma: {lemma})",
-        file=sys.stderr,
+    _log(
+        f"transform_tag: request default for {category} (tag: {tag}, word: {word}, lemma: {lemma})"
     )
     return constants.EMPTY_GRAM_CAT_DEFAULT[category]
 
@@ -535,27 +541,11 @@ to process all corpus files within a folder with the function file_to_file(), th
 """
 
 
-def main():
-    # TODO: review
-    parser = argparse.ArgumentParser(
-        description="Add morphological annotation according to the CoCzeFLA standards to a text file. REVIEW"
-    )
-    parser.add_argument(
-        "-s",
-        "--std",
-        action="store_true",
-        help="receive/print input/output on stdin/stdout",
-    )
-    parser.add_argument(
-        "-o",
-        "--outdir",
-        nargs=1,
-        type=str,
-        help="directory where output files should be stored",
-    )
-    parser.add_argument("inputfiles", nargs="*", default=[])
+def handle_args(args):
+    global _verbose
 
-    args = parser.parse_args(sys.argv[1:])
+    if args.verbose:
+        _verbose = True
 
     if args.std:
         annotate_filestream(sys.stdin, sys.stdout, _get_tagger())
@@ -578,6 +568,36 @@ def main():
             "An output directory needs to be specified. See --help for more.",
             file=sys.stderr,
         )
+
+
+def main():
+    # TODO: review
+    parser = argparse.ArgumentParser(
+        description="Add morphological annotation according to the CoCzeFLA standards to a text file. REVIEW"
+    )
+    parser.add_argument(
+        "-s",
+        "--std",
+        action="store_true",
+        help="receive/print input/output on stdin/stdout",
+    )
+    parser.add_argument(
+        "-o",
+        "--outdir",
+        nargs=1,
+        type=str,
+        help="directory where output files should be stored",
+    )
+    parser.add_argument("inputfiles", nargs="*", default=[])
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="print runtime messages to stderr; if disabled, no logging is done",
+    )
+
+    args = parser.parse_args(sys.argv[1:])
+    handle_args(args)
 
 
 if __name__ == "__main__":
