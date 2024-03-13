@@ -145,3 +145,6 @@ MOR_POS_OVERRIDES = (
         "být": "v:aux/cop",
     }
 )
+
+# lines not to be annotated
+SKIP_LINES = [".", "0 .", "nee .", "emem .", "mhm .", "hm ."]
