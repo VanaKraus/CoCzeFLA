@@ -79,7 +79,7 @@ CHAT_TO_PLAIN_TEXT = [
     (r"  ", r" "),
 ]
 
-MOR_WORDS_HARDCODED = {
+MOR_WORDS_OVERRIDES = {
     # lexically specified "exceptions": "mami" always to be tagged as "n|máma-5&SG&F" etc.
     "mami": "n|máma-5&SG&F",
     "no": "part|no",

@@ -132,6 +132,8 @@ extracts the POS information from the tag and returns the POS value in the MOR f
 lemma in the input as well, because of the tagging of plural invariable nouns
 word in the input as well, because of the tagging of proper names
 
+For MorphoDiTa manual see: https://ufal.mff.cuni.cz/techrep/tr64.pdf
+
 example of use: pos_mor("NNFS4-----A----", "Mařenku", "Mařenka")
 → output: 'n:prop'
 
@@ -139,76 +141,96 @@ example of use: pos_mor("NNFS4-----A----", "Mařenku", "Mařenka")
 
 
 def pos_mor(tag: str, word: str, lemma: str):
+    # TODO: remove
+    if (word.endswith("krát") and lemma.endswith("krát")) or tag.startswith("Cv"):
+        _log(f"pos_mor: tag {tag}, word {word}, lemma {lemma}")
+
+    # POS values of certain lemmas are pre-defined
     if lemma in replacement_rules.MOR_POS_OVERRIDES:
         return replacement_rules.MOR_POS_OVERRIDES[lemma]
 
     result = ""
-    if tag.startswith("Z"):
+    if tag.startswith("Z"):  # punctuation
         result = "Z"
-    elif tag.startswith("X"):
+    elif tag.startswith("X"):  # unknown
         result = "x"
-    elif tag.startswith("N"):
+    elif tag.startswith("N"):  # noun
         result = "n"
-        if word == word.capitalize():  # proper nouns
+        if word == word.capitalize():  # proper noun
             result = "n:prop"
-    elif tag.startswith("A"):
+    elif tag.startswith("A"):  # adjective
         result = "adj"
-        if tag.startswith("AC"):
+        if tag.startswith("AC"):  # short (nominal)
             result = "adj:short"
-        elif tag.startswith("AU"):
+        elif tag.startswith("AU"):  # possessive
             result = "adj:poss"
-    elif tag.startswith("P"):
+    elif tag.startswith("P"):  # pronoun
         result = "pro"
-        if tag.startswith("PD"):
+        if tag.startswith("PD"):  # demonstrative
             result = "pro:dem"
-        elif tag.startswith("PP") or tag.startswith("PH") or tag.startswith("P5"):
-            result = "pro:pers"
+        # personal
         elif (
-            tag.startswith("P1")
-            or tag.startswith("P9")
+            tag.startswith("P5")
             or tag.startswith("PE")
-            or tag.startswith("PJ")
+            or tag.startswith("PH")
+            or tag.startswith("PP")
         ):
+            result = "pro:pers"
+        # relative
+        elif tag.startswith("P1"):
             result = "pro:rel"
-        elif tag.startswith("PS"):
-            result = "pro:poss"
-        elif tag.startswith("P4") or tag.startswith("PK") or tag.startswith("PQ"):
+        # relative or interrogative
+        elif tag.startswith("P4") or tag.startswith("PQ"):
             result = "pro:rel/int"
-        elif tag.startswith("PW"):
+        # possesive
+        elif tag.startswith("PS") or tag.startswith("P9"):
+            result = "pro:poss"
+        # negative
+        elif tag.startswith("PW") or tag.startswith("PY"):
             result = "pro:neg"
-        elif tag.startswith("PL") or tag.startswith("PZ"):
+        # indefinite
+        # TODO: PL stands for "delimiting" (všechen, sám)
+        elif tag.startswith("PK") or tag.startswith("PL") or tag.startswith("PZ"):
             result = "pro:indef"
-        elif tag.startswith("P6") or tag.startswith("P7"):  # relfexive se, si...
+        # reflexive se, si...
+        # P8 (svůj) in rules.MOR_POS_OVERRIDES
+        elif tag.startswith("P6") or tag.startswith("P7"):
             result = "pro:refl"
 
-    elif tag.startswith("C"):
+    elif tag.startswith("C"):  # numeral
+        # TODO: indefinite numerals include (Ch (generic),) Co (multiplicative), Cy (cardinal)
         result = "num"
-        if tag.startswith("Cl") or tag.startswith("Cn"):
+        if tag.startswith("Cl") or tag.startswith("Cn") or tag.startswith("Cz"):
             result = "num:card"
         elif tag.startswith("Cr"):
             result = "num:ord"
+        # TODO: tests for krát$ seem redundant - were they meant to catch Co?
         elif tag.startswith("Cv") or (word.endswith("krát") and lemma.endswith("krát")):
             result = "num:mult"
         elif tag.startswith("Ca"):
             result = "num:indef"
 
+    # verbs; v:aux and v:cop overriden in rules.MOR_POS_OVERRIDES and rules.MOR_WORDS_OVERRIDES
     elif tag.startswith("V"):
         result = "v"
 
+    # adverbs; adv:pro and adv:pro:neg overriden in rules.MOR_POS_OVERRIDES
     elif tag.startswith("D"):
         result = "adv"
 
-    elif tag.startswith("R"):
+    elif tag.startswith("R"):  # prepositions
         result = "prep"
-    elif tag.startswith("J^"):
+
+    # coordinating conjunction (incl. binary math. operations)
+    elif tag.startswith("J^") or tag.startswith("J*"):
         result = "conj:coord"
-    elif tag.startswith("J,"):
+    elif tag.startswith("J,"):  # subordinate conjunction
         result = "conj:sub"
-    elif tag.startswith("J*"):
-        result = "conj:coord"
-    elif tag.startswith("T"):
+
+    elif tag.startswith("T"):  # particle
         result = "part"
-    elif tag.startswith("I"):
+
+    elif tag.startswith("I"):  # interjection
         result = "int"
 
     return result
@@ -400,8 +422,8 @@ def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tfla
     if constants.tflag.interjection in flags:
         return f"int|{token.word}"
 
-    if token.word in replacement_rules.MOR_WORDS_HARDCODED:
-        return replacement_rules.MOR_WORDS_HARDCODED[token.word]
+    if token.word in replacement_rules.MOR_WORDS_OVERRIDES:
+        return replacement_rules.MOR_WORDS_OVERRIDES[token.word]
 
     new_tag = (
         f"-{_tag}"
