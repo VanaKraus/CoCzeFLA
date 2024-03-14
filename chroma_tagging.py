@@ -544,13 +544,10 @@ def annotate_filestream(
             and not (stripped := line_plain_text.strip(" "))
             in replacement_rules.SKIP_LINES
         ):
-            _log(f'annotate_filestream: noskip: "{stripped}"')
             print(
                 mor_line(stripped, tagger, tokenizer),
                 file=target_fs,
             )
-        else:
-            _log(f'annotate_filestream: skip: "{line_plain_text}"')
 
 
 """
