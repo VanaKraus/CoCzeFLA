@@ -7,7 +7,7 @@ CHAT_TO_PLAIN_TEXT = [
     # remove "<xyz>" followed by "[/]", "[//]" or e.g. "[=! básnička]"
     # e.g. [básnička = poem]: *CHI:	<máme_tady_xxx_a_pěkný_bububínek_je_tam_jedno_kůzlátko_a_už_nevylezlo> [=! básnička].
     (
-        r"<[ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+> \[\/{1,2}|=! (básnička|písnička|zpěv)\]",
+        r"<[ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+> \[(\/{1,2}|=! (básnička|písnička|zpěv))\]",
         "",
     ),
     # renove all material between "&=" and a space, including cases such as "&=imit:xxx"
