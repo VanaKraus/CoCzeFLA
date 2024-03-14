@@ -539,11 +539,18 @@ def annotate_filestream(
         line = line.strip(" \n")
         print(mezera_interpunkce(line), file=target_fs)
         line_plain_text = chat_to_plain_text(line)
-        if not line_plain_text in replacement_rules.SKIP_LINES + [None]:
+        if (
+            line_plain_text
+            and not (stripped := line_plain_text.strip(" "))
+            in replacement_rules.SKIP_LINES
+        ):
+            _log(f'annotate_filestream: noskip: "{stripped}"')
             print(
-                mor_line(line_plain_text, tagger, tokenizer),
+                mor_line(stripped, tagger, tokenizer),
                 file=target_fs,
             )
+        else:
+            _log(f'annotate_filestream: skip: "{line_plain_text}"')
 
 
 """
