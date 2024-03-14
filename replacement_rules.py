@@ -39,7 +39,7 @@ CHAT_TO_PLAIN_TEXT = [
     # interjections with underscores
     (r"_", r""),
     # remove "^", "(.)", "[*]"
-    (r"^", r""),
+    (r"\^", r""),
     (r"\(.\)", r""),
     (r"\[\*\]", r""),
     # remove "xxx", "yyy"
@@ -69,14 +69,12 @@ CHAT_TO_PLAIN_TEXT = [
     (r"@z:c", constants.PLACEHOLDER_CIZ),
     # the function mor_line() will later re-tag these appropriately
     # Nee > ne
-    (r"Nee", r"ne"),
-    (r"nee", r"ne"),
+    (r"[Nn]ee", r"ne"),
     # formatting adjustment
-    (r"\?", r" ?"),
-    (r"!", r" !"),
-    (r"\.", r" ."),
-    (r",", r" ,"),
-    (r"  ", r" "),
+    (r"([\?!\.,])", r" \1"),
+    (r"\s{1,}", r" "),
+    (r"^\s+", r""),
+    (r"\s+$", r""),
 ]
 
 MOR_WORDS_OVERRIDES = {
