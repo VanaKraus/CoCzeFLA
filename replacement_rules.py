@@ -22,13 +22,14 @@ CHAT_TO_PLAIN_TEXT = [
         "",
     ),
     # <xyz> [=? xxx] or <xyz> [=! xxx]
+    # TODO: is [=? xxx] still in use?
     (
         r"\[\=[\?\!] [ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+\]",
         "",
     ),
     # remove repetition marking, e.g. [x 2]
     # an optional space after the number, because there was a line with "[x 4 ] ." at which the script broke down
-    (r"\[x [0123456789]+ ?\]", ""),
+    (r"\[x [0-9]+ ?\]", ""),
     # "přišels [:přišel jsi]" is to be analyzed as "přišel jsi"
     (
         r"[a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+ \[:([ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)\]",
@@ -42,37 +43,30 @@ CHAT_TO_PLAIN_TEXT = [
     (r"\^", r""),
     (r"\(.\)", r""),
     (r"\[\*\]", r""),
-    # remove "xxx", "yyy"
+    # remove "xxx"
     (r"xxx", r""),
-    (r"yyy", r""),
     # remove "+<" from the beginning of lines
     (r"\+<", ""),
     # remove all the remaining "<"s, "*"s, "[?]"s, and "[!]"s, e.g. "*CHI: chci  <žlutou> [?] kytku."
-    (r"<", r""),
-    (r">", r""),
-    (r"\[\?\]", r""),
-    (r"\[\!\]", r""),
-    # added: remove quote marks
-    (r'"', r""),
-    (r"“", r""),
-    (r"”", r""),
+    (r"<|>", r""),
+    (r"\[[\?!]\]", r""),
+    # remove quote marks
+    (r'"|“|”', r""),
     # token ending in @i, @z:ip, @z:ia, @z:in = to be tagged as an interjection
     # bacashooga is a random string not overlapping with any existing Czech words
-    (r"@i", constants.PLACEHOLDER_INTERJECTION),
-    (r"@z:ip", constants.PLACEHOLDER_INTERJECTION),
-    (r"@z:ia", constants.PLACEHOLDER_INTERJECTION),
-    (r"@z:in", constants.PLACEHOLDER_INTERJECTION),
+    (r"@i|@z:ip|@z:ia|@z:in", constants.PLACEHOLDER_INTERJECTION),
     # token ending in @c, @n = tag is to end with -neo
-    (r"@c", constants.PLACEHOLDER_NEOLOGISM),
-    (r"@n", constants.PLACEHOLDER_NEOLOGISM),
-    # token ending in @z:c = tag is to end with -for
-    (r"@z:c", constants.PLACEHOLDER_FOREIGN),
+    (r"@c|@n", constants.PLACEHOLDER_NEOLOGISM),
+    # token ending in @z:f = tag is to end with -for
+    (r"@z:f", constants.PLACEHOLDER_FOREIGN),
     # the function mor_line() will later re-tag these appropriately
     # Nee > ne
     (r"[Nn]ee", r"ne"),
-    # formatting adjustment
+    # add space before punctuation
     (r"([\?!\.,])", r" \1"),
+    # remove excessive whitespaces
     (r"\s{1,}", r" "),
+    # remove leading and trailing whitespaces
     (r"^\s+", r""),
     (r"\s+$", r""),
 ]

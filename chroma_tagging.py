@@ -482,6 +482,7 @@ def mor_line(
     # small formal adjustments
     text = text.replace(", .", ".")
     text = text.replace("\t, ", "\t")
+    # TODO: do we really want to use '…'?
     text = text.replace("+ . . .", "+…").replace("+ …", "+…").replace("+ / .", "+/.")
 
     return text
@@ -495,6 +496,7 @@ a function for small formal adjustments WITHIN THE MAIN LINE, i.e., this is not 
 """
 
 
+# TODO: move to a separate script
 def mezera_interpunkce(line):
     if line.endswith("+..."):
         line = line[:-4] + "+…"
