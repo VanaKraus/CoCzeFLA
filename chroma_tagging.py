@@ -431,14 +431,20 @@ def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tfla
         else ""
     )
 
-    if constants.tflag.tag_extension in flags:
-        new_tag += flags[constants.tflag.tag_extension]
+    if constants.tflag.neologism in flags:
+        new_tag += "-neo"
+    elif constants.tflag.foreign in flags:
+        new_tag += "-for"
 
     lemma = token.lemma
 
     # plural central pronouns to be lemmatized as e.g. "my" or "náš" rather than forms of "já" or "můj"
     if token.word in replacement_rules.MOR_WORDS_LEMMA_OVERRIDES:
         lemma = replacement_rules.MOR_WORDS_LEMMA_OVERRIDES[token.word]
+
+    # neologisms not to be lemmatized
+    elif constants.tflag.neologism in flags:
+        lemma = token.word
 
     return f"{pos_label}|{lemma}{new_tag}"
 
@@ -459,9 +465,9 @@ def mor_line(
     for word in tokenize(text, tokenizer):
         flag = {}
         if word.endswith(constants.PLACEHOLDER_NEOLOGISM):
-            flag[constants.tflag.tag_extension] = "-neo"
+            flag[constants.tflag.neologism] = True
         elif word.endswith(constants.PLACEHOLDER_FOREIGN):
-            flag[constants.tflag.tag_extension] = "-for"
+            flag[constants.tflag.foreign] = True
         elif word.endswith(constants.PLACEHOLDER_INTERJECTION):
             flag[constants.tflag.interjection] = True
         flags.append(flag)

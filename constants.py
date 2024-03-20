@@ -15,6 +15,8 @@ PLACEHOLDER_FOREIGN = "bacashoogaciz"
 class tflag(Enum):
     tag_extension = 1
     interjection = 2
+    neologism = 3
+    foreign = 4
 
 
 # default values for empty grammatical categories
