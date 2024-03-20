@@ -141,9 +141,6 @@ example of use: pos_mor("NNFS4-----A----", "Mařenku", "Mařenka")
 
 
 def pos_mor(tag: str, word: str, lemma: str):
-    # TODO: remove
-    if (word.endswith("krát") and lemma.endswith("krát")) or tag.startswith("Cv"):
-        _log(f"pos_mor: tag {tag}, word {word}, lemma {lemma}")
 
     # POS values of certain lemmas are pre-defined
     if lemma in replacement_rules.MOR_POS_OVERRIDES:
@@ -283,19 +280,8 @@ def transform_tag(tag, word, lemma):
         else:
             aspect = _get_default_gram_cat("aspect", tag, word, lemma)
 
-        if tag[3] == "S":
-            number = "SG"
-        elif tag[3] == "P":
-            number = "PL"
-        # else: the value "–": infinitive, auxiliary "být" in the conditional form
-
-        if tag.startswith("Vs"):
-            voice = "pas"
-        elif tag[11] == "A":
-            voice = "akt"
-
         if tag[2] != "-":
-            if tag[2] == "Y" or tag[2] == "M":
+            if tag[2] in ["I", "M", "Y"]:
                 gender = "M"
             elif tag[2] == "N":
                 gender = "N"
@@ -303,6 +289,19 @@ def transform_tag(tag, word, lemma):
                 gender = "F"
             else:
                 gender = _get_default_gram_cat("gender", tag, word, lemma)
+
+        if tag[3] == "S":
+            number = "SG"
+        elif tag[3] == "P":
+            number = "PL"
+        # else: the value "–": infinitive, auxiliary "být" in the conditional form
+
+        # passive
+        if tag[11] == "P":
+            voice = "pas"
+        # active
+        elif tag[11] == "A":
+            voice = "akt"
 
         # infinitive
         if tag.startswith("Vf"):
@@ -317,45 +316,40 @@ def transform_tag(tag, word, lemma):
 
             if number is None:
                 number = _get_default_gram_cat("number", tag, word, lemma)
-            if voice is None:
-                voice = _get_default_gram_cat("voice", tag, word, lemma)
 
         # passive participle
         elif tag.startswith("Vs"):
             if number is None:
                 number = _get_default_gram_cat("number", tag, word, lemma)
-            if voice is None:
-                voice = _get_default_gram_cat("voice", tag, word, lemma)
 
         # if it is neither an infinitive nor a participle
         else:
-            if tag[7] == "1" or tag[7] == "2" or tag[7] == "3":
+            if tag[7] in ["1", "2", "3"]:
                 person = tag[7]
 
             if tag.startswith("Vc"):
                 mood = "cond"
-                voice = "akt"
             elif tag.startswith("Vi"):
                 mood = "imp"
-                voice = "akt"
-            else:
+            elif tag.startswith("VB"):
                 mood = "ind"
                 if tag[8] == "P":
                     tense = "pres"
                 elif tag[8] == "F":
                     tense = "futur"
+            # else: transgressive
 
             if number is None:
                 number = _get_default_gram_cat("number", tag, word, lemma)
 
     elif (
         (
-            tag.startswith("N")
-            or tag.startswith("A")
-            or tag.startswith("P")
-            or tag.startswith("C")
+            tag.startswith("N")  # nouns
+            or tag.startswith("A")  # adjectives
+            or tag.startswith("P")  # pronouns
+            or tag.startswith("C")  # numerals
         )
-        and not tag.startswith("Cv")
+        and not tag.startswith("Cv")  # multiplicative numerals
         and not word.endswith("krát")
         and not lemma.endswith("krát")
     ):
@@ -375,19 +369,20 @@ def transform_tag(tag, word, lemma):
             gender = "MA"
         elif tag.startswith("NNI"):
             gender = "MI"
+        elif tag[2] in ["I", "Y"]:
+            gender = "M"
         elif lemma == "co":
             gender = "N"
-        elif tag[2] == "I" or tag[2] == "Y":
-            gender = "M"
         elif tag[2] == "X":
             gender = _get_default_gram_cat("gender", tag, word, lemma)
+        # TODO: we might want this case to default to the default value
         elif tag[2] != "-":
             gender = tag[2]
 
     if tag.startswith("A") or tag.startswith("D"):
-        if tag[9] == "2":
+        if tag[9] == "2":  # comparative
             comp_deg = "CP"
-        if tag[9] == "3":
+        if tag[9] == "3":  # superlative
             comp_deg = "SP"
 
     gram_categories = [
