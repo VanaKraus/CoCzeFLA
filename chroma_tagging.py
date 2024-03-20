@@ -397,17 +397,13 @@ def transform_tag(tag, word, lemma):
         aspect,
     ]
 
-    # join grammatical categories into one string
-    gr_joined = (
-        _jnd
-        if (_jnd := gr_delim.join([el for el in gram_categories if not el is None]))
-        != ""
-        else None
-    )
+    # join non-empty grammatical categories into one string
+    gr_joined = gr_delim.join([el for el in gram_categories if el])
 
     lex_categories = [comp_deg, neg, gr_joined]
 
-    return lex_delim.join([el for el in lex_categories if not el is None])
+    # join non-empty lexical categories into one string
+    return lex_delim.join([el for el in lex_categories if el])
 
 
 def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tflag,]):
