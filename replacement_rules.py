@@ -65,8 +65,8 @@ CHAT_TO_PLAIN_TEXT = [
     # token ending in @c, @n = tag is to end with -neo
     (r"@c", constants.PLACEHOLDER_NEOLOGISM),
     (r"@n", constants.PLACEHOLDER_NEOLOGISM),
-    # token ending in @z:c = tag is to end with -ciz
-    (r"@z:c", constants.PLACEHOLDER_CIZ),
+    # token ending in @z:c = tag is to end with -for
+    (r"@z:c", constants.PLACEHOLDER_FOREIGN),
     # the function mor_line() will later re-tag these appropriately
     # Nee > ne
     (r"[Nn]ee", r"ne"),

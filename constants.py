@@ -8,8 +8,7 @@ TOKENIZER_TYPE = "czech"
 
 PLACEHOLDER_INTERJECTION = "bacashoogacit"
 PLACEHOLDER_NEOLOGISM = "bacashoogachi"
-# TODO: what does "ciz" stand for?
-PLACEHOLDER_CIZ = "bacashoogaciz"
+PLACEHOLDER_FOREIGN = "bacashoogaciz"
 
 
 # token flags

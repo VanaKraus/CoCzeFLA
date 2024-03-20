@@ -460,15 +460,15 @@ def mor_line(
         flag = {}
         if word.endswith(constants.PLACEHOLDER_NEOLOGISM):
             flag[constants.tflag.tag_extension] = "-neo"
-        elif word.endswith(constants.PLACEHOLDER_CIZ):
-            flag[constants.tflag.tag_extension] = "-ciz"
+        elif word.endswith(constants.PLACEHOLDER_FOREIGN):
+            flag[constants.tflag.tag_extension] = "-for"
         elif word.endswith(constants.PLACEHOLDER_INTERJECTION):
             flag[constants.tflag.interjection] = True
         flags.append(flag)
 
     text = (
         text.replace(constants.PLACEHOLDER_NEOLOGISM, "")
-        .replace(constants.PLACEHOLDER_CIZ, "")
+        .replace(constants.PLACEHOLDER_FOREIGN, "")
         .replace(constants.PLACEHOLDER_INTERJECTION, "")
     )
 
