@@ -488,31 +488,6 @@ def mor_line(
     return text
 
 
-"""
-a function for small formal adjustments WITHIN THE MAIN LINE, i.e., this is not a necessary part of the morphological analysis
-→ adds a space before ".", "!" and "?" on the main line
-→ changes +... to +…
-
-"""
-
-
-# TODO: move to a separate script
-def mezera_interpunkce(line):
-    if line.endswith("+..."):
-        line = line[:-4] + "+…"
-    elif line.endswith("+…"):
-        pass
-    elif line.endswith("+/."):
-        pass
-    elif line.endswith(".") and line.endswith(" .") == False:
-        line = line[:-1] + " ."
-    elif line.endswith("?") and line.endswith(" ?") == False:
-        line = line[:-1] + " ?"
-    elif line.endswith("!") and line.endswith(" !") == False:
-        line = line[:-1] + " !"
-    return line
-
-
 """ 
 this function takes a file ("path" in the input) and creates a new file ("path_goal"),
 which includes the added morphological tiers
@@ -536,7 +511,7 @@ def annotate_filestream(
 ):
     for line in source_fs:
         line = line.strip(" \n")
-        print(mezera_interpunkce(line), file=target_fs)
+        print(line, file=target_fs)
         line_plain_text = chat_to_plain_text(line)
         if line_plain_text and not line_plain_text in replacement_rules.SKIP_LINES:
             print(
