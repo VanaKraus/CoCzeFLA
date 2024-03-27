@@ -47,9 +47,9 @@ CHAT_TO_PLAIN_TEXT = [
     (r"xxx", r""),
     # remove "+<" from the beginning of lines
     (r"\+<", ""),
-    # remove all the remaining "<"s, "*"s, "[?]"s, and "[!]"s, e.g. "*CHI: chci  <žlutou> [?] kytku."
+    # remove all the remaining "<"s, "*"s, "[?]"s, e.g. "*CHI: chci  <žlutou> [?] kytku."
     (r"<|>", r""),
-    (r"\[[\?!]\]", r""),
+    (r"\[[\?]\]", r""),
     # remove quote marks
     (r'"|“|”', r""),
     # token ending in @i, @z:ip, @z:ia, @z:in = to be tagged as an interjection
@@ -64,7 +64,7 @@ CHAT_TO_PLAIN_TEXT = [
     (r"[Nn]ee", r"ne"),
     # add space before punctuation
     (r"([\?!\.,])", r" \1"),
-    # remove excessive whitespaces
+    # remove excessive whitespaces and turn them into regular spaces
     (r"\s{1,}", r" "),
     # remove leading and trailing whitespaces
     (r"^\s+", r""),
