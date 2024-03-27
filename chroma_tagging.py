@@ -80,6 +80,11 @@ def _get_tokenizer() -> Tokenizer:
     return _tokenizer
 
 
+def tag(text: str, tagger: Tagger = _get_tagger()) -> list[Token]:
+    output = list(tagger.tag(text, convert="strip_lemma_id"))
+    return output
+
+
 """
 a function for using the MorphoDiTa tagger, see https://ufal.mff.cuni.cz/morphodita
 the directory needs to be adjusted
@@ -90,11 +95,6 @@ example of use: tag("vidím Mařenku")
  Token(word='Mařenku', lemma='Mařenka', tag='NNFS4-----A----')]
 
 """
-
-
-def tag(text: str, tagger: Tagger = _get_tagger()) -> list[Token]:
-    output = list(tagger.tag(text, convert="strip_lemma_id"))
-    return output
 
 
 def tokenize(text: str, tokenizer: Tokenizer = _get_tokenizer()) -> list[str]:
@@ -486,21 +486,6 @@ def mor_line(
     return text
 
 
-""" 
-this function takes a file ("path" in the input) and creates a new file ("path_goal"),
-which includes the added morphological tiers
-
-example of use: file_to_file("./test_files/aneta.txt", "./test_files/aneta_result.txt")
-
-"""
-
-
-def annotate_file(path, path_goal, tagger):
-    with open(path, "r") as file:
-        with open(path_goal, "a") as file_goal:
-            annotate_filestream(file, file_goal, tagger)
-
-
 def annotate_filestream(
     source_fs,
     target_fs,
@@ -516,6 +501,21 @@ def annotate_filestream(
                 mor_line(line_plain_text, tagger, tokenizer),
                 file=target_fs,
             )
+
+
+""" 
+this function takes a file ("path" in the input) and creates a new file ("path_goal"),
+which includes the added morphological tiers
+
+example of use: file_to_file("./test_files/aneta.txt", "./test_files/aneta_result.txt")
+
+"""
+
+
+def annotate_file(path, path_goal, tagger):
+    with open(path, "r") as file:
+        with open(path_goal, "a") as file_goal:
+            annotate_filestream(file, file_goal, tagger)
 
 
 """
