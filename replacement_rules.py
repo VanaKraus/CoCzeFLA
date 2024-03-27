@@ -66,6 +66,10 @@ CHAT_TO_PLAIN_TEXT = [
     (r"([\?!\.,])", r" \1"),
     # remove excessive whitespaces and turn them into regular spaces
     (r"\s{1,}", r" "),
+    # remove commas that are not separating anything
+    # TODO: horizontal ellipsis ('…')
+    (r"(, )+(\.|\?|\!|\+ \. \. \.|\+…|\+\/\.)", r"\2"),
+    (r"^\s+,", r""),
     # remove leading and trailing whitespaces
     (r"^\s+", r""),
     (r"\s+$", r""),

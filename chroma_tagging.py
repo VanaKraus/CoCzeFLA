@@ -479,9 +479,7 @@ def mor_line(
         result.append(_construct_mor_word(tagged_tokens[i], pos_labels[i], flags[i]))
     text = "%mor:\t" + " ".join(result)
 
-    # small formal adjustments
-    text = text.replace(", .", ".")
-    text = text.replace("\t, ", "\t")
+    # formal adjustments to correct spaces created by tokenization
     # TODO: do we really want to use '…'?
     text = text.replace("+ . . .", "+…").replace("+ …", "+…").replace("+ / .", "+/.")
 
