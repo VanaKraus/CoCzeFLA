@@ -21,10 +21,9 @@ CHAT_TO_PLAIN_TEXT = [
         r"[0&][a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+",
         "",
     ),
-    # <xyz> [=? xxx] or <xyz> [=! xxx]
-    # TODO: is [=? xxx] still in use?
+    # <xyz> [=! xxx]
     (
-        r"\[\=[\?\!] [ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+\]",
+        r"\[\=\! [ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+\]",
         "",
     ),
     # remove repetition marking, e.g. [x 2]
