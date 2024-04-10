@@ -254,12 +254,7 @@ def pos_mor(tag: str, word: str, lemma: str):
     return result
 
 
-def _get_default_gram_cat(
-    category: str, tag: str = None, word: str = None, lemma: str = None
-) -> str:
-    _log(
-        f"transform_tag: request default for {category} (tag: {tag}, word: {word}, lemma: {lemma})"
-    )
+def _get_default_gram_cat(category: str) -> str:
     return constants.EMPTY_GRAM_CAT_DEFAULT[category]
 
 
@@ -287,30 +282,32 @@ def transform_tag(tag, word, lemma):
     )
 
     # negation
-    if (tag.startswith("V") and tag[10] == "N") or (
+    if (tag[0] == "V" and tag[10] == "N") or (
         word.startswith("ne") and not lemma.startswith("ne")
     ):
         neg = "neg"
 
     # verbs
-    if tag.startswith("V"):
+    if tag[0] == "V":
+        # aspect
         if lemma in words.IMPERFECTIVE_VERBS:
             aspect = "impf"
         elif lemma in words.PERFECTIVE_VERBS:
             aspect = "pf"
         else:
-            aspect = _get_default_gram_cat("aspect", tag, word, lemma)
+            aspect = _get_default_gram_cat("aspect")
 
-        if tag[2] != "-":
-            if tag[2] in ["I", "M", "Y"]:
-                gender = "M"
-            elif tag[2] == "N":
-                gender = "N"
-            elif tag[2] == "F":
-                gender = "F"
-            else:
-                gender = _get_default_gram_cat("gender", tag, word, lemma)
+        # gender
+        if tag[2] in ("I", "M", "Y"):
+            gender = "M"
+        elif tag[2] == "N":
+            gender = "N"
+        elif tag[2] == "F":
+            gender = "F"
+        elif tag[2] != "-":
+            gender = _get_default_gram_cat("gender")
 
+        # number
         if tag[3] == "S":
             number = "SG"
         elif tag[3] == "P":
@@ -324,75 +321,69 @@ def transform_tag(tag, word, lemma):
         elif tag[11] == "A":
             voice = "akt"
 
-        # infinitive
-        if tag.startswith("Vf"):
-            form_type = "inf"
+        match tag[1]:
+            # infinitive
+            case "f":
+                form_type = "inf"
 
-        # past participle
-        elif tag.startswith("Vp"):
-            tense = "past"
-            # feminine participles in -la obligatorily singular
-            if word.endswith("la") and gender == "F":
-                number = "SG"
+            # past participle
+            case "p":
+                tense = "past"
 
-            if number is None:
-                number = _get_default_gram_cat("number", tag, word, lemma)
+                if number is None:
+                    number = _get_default_gram_cat("number")
 
-        # passive participle
-        elif tag.startswith("Vs"):
-            if number is None:
-                number = _get_default_gram_cat("number", tag, word, lemma)
+            # passive participle
+            case "s":
+                if number is None:
+                    number = _get_default_gram_cat("number")
 
-        # if it is neither an infinitive nor a participle
-        else:
-            if tag[7] in ["1", "2", "3"]:
-                person = tag[7]
+            # if it's neither an infinitive nor a participle
+            case _:
+                if tag[7] in ("1", "2", "3"):
+                    person = tag[7]
 
-            if tag.startswith("Vc"):
-                mood = "cond"
-            elif tag.startswith("Vi"):
-                mood = "imp"
-            elif tag.startswith("VB"):
-                mood = "ind"
-                if tag[8] == "P":
-                    tense = "pres"
-                elif tag[8] == "F":
-                    tense = "futur"
-            # else: transgressive
+                if tag.startswith("Vc"):
+                    mood = "cond"
+                elif tag.startswith("Vi"):
+                    mood = "imp"
+                elif tag.startswith("VB"):
+                    mood = "ind"
+                    if tag[8] == "P":
+                        tense = "pres"
+                    elif tag[8] == "F":
+                        tense = "futur"
+                # else: transgressive
 
-            if number is None:
-                number = _get_default_gram_cat("number", tag, word, lemma)
+                if number is None:
+                    number = _get_default_gram_cat("number")
 
-    elif (
-        tag.startswith("N")  # nouns
-        or tag.startswith("A")  # adjectives
-        or tag.startswith("P")  # pronouns
-        or tag.startswith("C")  # numerals
-    ) and not tag.startswith(
+    # nouns, adjectives, pronouns, numerals
+    elif tag[0] in ("N", "A", "P", "C") and not tag.startswith(
         "Cv"
     ):  # multiplicative numerals
-        if tag[3] == "S" or lemma in ["kdo", "co", "se"]:
+        if tag[3] == "S":
             number = "SG"
-        elif tag[3] == "P" or tag[3] == "D":
+        elif tag[3] in ("P", "D"):
             number = "PL"
         else:
-            number = _get_default_gram_cat("number", tag, word, lemma)
+            number = _get_default_gram_cat("number")
 
         if tag[4] != "X":
             case = tag[4]
         else:
-            case = _get_default_gram_cat("case", tag, word, lemma)
+            case = _get_default_gram_cat("case")
 
         if tag.startswith("NNM"):
             gender = "MA"
         elif tag.startswith("NNI"):
             gender = "MI"
-        elif tag[2] in ["I", "Y"]:
+        elif tag[2] in ("I", "Y"):
             gender = "M"
         elif tag[2] != "-":
-            gender = _get_default_gram_cat("gender", tag, word, lemma)
+            gender = _get_default_gram_cat("gender")
 
-    if tag.startswith("A") or tag.startswith("D"):
+    if tag[0] in ("A", "D"):
         if tag[9] == "2":  # comparative
             comp_deg = "CP"
         if tag[9] == "3":  # superlative
@@ -402,8 +393,11 @@ def transform_tag(tag, word, lemma):
     if lemma == "co":
         gender = "N"
 
+    if lemma in ("kdo", "co", "se"):
+        number = "SG"
+
     # build strings
-    gram_categories = [
+    gram_categories = (
         form_type,
         case,
         person,
@@ -413,12 +407,12 @@ def transform_tag(tag, word, lemma):
         voice,
         gender,
         aspect,
-    ]
+    )
 
     # join non-empty grammatical categories into one string
     gr_joined = gr_delim.join([el for el in gram_categories if el])
 
-    lex_categories = [comp_deg, neg, gr_joined]
+    lex_categories = (comp_deg, neg, gr_joined)
 
     # join non-empty lexical categories into one string
     return lex_delim.join([el for el in lex_categories if el])
