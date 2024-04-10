@@ -197,15 +197,16 @@ def pos_mor(tag: str, word: str, lemma: str):
     elif tag.startswith("C"):  # numeral
         # TODO: indefinite numerals include (Ch (generic),) Co (multiplicative), Cy (cardinal)
         result = "num"
-        if tag.startswith("Cl") or tag.startswith("Cn") or tag.startswith("Cz"):
-            result = "num:card"
-        elif tag.startswith("Cr"):
-            result = "num:ord"
-        # TODO: tests for krát$ seem redundant - were they meant to catch Co?
-        elif tag.startswith("Cv") or (word.endswith("krát") and lemma.endswith("krát")):
-            result = "num:mult"
-        elif tag.startswith("Ca"):
-            result = "num:indef"
+
+        match tag[:2]:
+            # TODO: Cy = num. cardinal indef., agreement gender (nejeden)
+            case "Cl" | "Cn" | "Cz" | "Ca":
+                result = "num:card"
+            case "Cr" | "Cw":
+                result = "num:ord"
+            # TODO: what do Cu and C3 stand for?
+            case "Cu" | "C3" | "Cv" | "Co":
+                result = "num:mult"
 
     # verbs; v:aux and v:cop overriden in rules.MOR_POS_OVERRIDES and rules.MOR_WORDS_OVERRIDES
     elif tag.startswith("V"):
@@ -343,16 +344,13 @@ def transform_tag(tag, word, lemma):
                 number = _get_default_gram_cat("number", tag, word, lemma)
 
     elif (
-        (
-            tag.startswith("N")  # nouns
-            or tag.startswith("A")  # adjectives
-            or tag.startswith("P")  # pronouns
-            or tag.startswith("C")  # numerals
-        )
-        and not tag.startswith("Cv")  # multiplicative numerals
-        and not word.endswith("krát")
-        and not lemma.endswith("krát")
-    ):
+        tag.startswith("N")  # nouns
+        or tag.startswith("A")  # adjectives
+        or tag.startswith("P")  # pronouns
+        or tag.startswith("C")  # numerals
+    ) and not tag.startswith(
+        "Cv"
+    ):  # multiplicative numerals
         if tag[3] == "S" or lemma in ["kdo", "co", "se"]:
             number = "SG"
         elif tag[3] == "P" or tag[3] == "D":
