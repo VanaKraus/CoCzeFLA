@@ -108,6 +108,9 @@ MOR_WORDS_OVERRIDES = {
     "ses": "pro:refl_v:aux|se_být-4&SG_2&SG&ind&pres&akt&impf",
     "sis": "pro:refl_v:aux|se_být-3&SG_2&SG&ind&pres&akt&impf",
     "zač": "prep_pro:int|za_co-4&SG&N",
+    "hm": "int|hm",
+    "mhm": "int|mhm",
+    "emem": "int|emem",
 }
 
 # dict: {word form: target lemma}
@@ -143,4 +146,4 @@ MOR_POS_OVERRIDES = (
 )
 
 # lines not to be annotated
-SKIP_LINES = [".", "0 .", "nee .", "emem .", "mhm .", "hm ."]
+SKIP_LINES = [".", "0 ."]
