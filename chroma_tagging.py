@@ -141,95 +141,115 @@ example of use: pos_mor("NNFS4-----A----", "Mařenku", "Mařenka")
 
 
 def pos_mor(tag: str, word: str, lemma: str):
-
     # POS values of certain lemmas are pre-defined
     if lemma in replacement_rules.MOR_POS_OVERRIDES:
         return replacement_rules.MOR_POS_OVERRIDES[lemma]
 
     result = ""
-    if tag.startswith("Z"):  # punctuation
-        result = "Z"
-    elif tag.startswith("X"):  # unknown
-        result = "x"
-    elif tag.startswith("N"):  # noun
-        result = "n"
-        if word == word.capitalize():  # proper noun
-            result = "n:prop"
-    elif tag.startswith("A"):  # adjective
-        result = "adj"
-        if tag.startswith("AC"):  # short (nominal)
-            result = "adj:short"
-        elif tag.startswith("AU"):  # possessive
-            result = "adj:poss"
-    elif tag.startswith("P"):  # pronoun
-        result = "pro"
-        if tag.startswith("PD"):  # demonstrative
-            result = "pro:dem"
-        # personal
-        elif (
-            tag.startswith("P5")
-            or tag.startswith("PE")
-            or tag.startswith("PH")
-            or tag.startswith("PP")
-        ):
-            result = "pro:pers"
-        # relative
-        elif tag.startswith("P1"):
-            result = "pro:rel"
-        # relative or interrogative
-        elif tag.startswith("P4") or tag.startswith("PQ"):
-            result = "pro:rel/int"
-        # possesive
-        elif tag.startswith("PS") or tag.startswith("P9"):
-            result = "pro:poss"
-        # negative
-        elif tag.startswith("PW") or tag.startswith("PY"):
-            result = "pro:neg"
-        # indefinite
-        # TODO: PL stands for "delimiting" (všechen, sám)
-        elif tag.startswith("PK") or tag.startswith("PL") or tag.startswith("PZ"):
-            result = "pro:indef"
-        # reflexive se, si...
-        # P8 (svůj) in rules.MOR_POS_OVERRIDES
-        elif tag.startswith("P6") or tag.startswith("P7"):
-            result = "pro:refl"
 
-    elif tag.startswith("C"):  # numeral
-        # TODO: indefinite numerals include (Ch (generic),) Co (multiplicative), Cy (cardinal)
-        result = "num"
+    match tag[0]:
+        # noun
+        case "N":
+            result = "n"
+            if word == word.capitalize():  # proper noun
+                result = "n:prop"
 
-        match tag[:2]:
-            # TODO: Cy = num. cardinal indef., agreement gender (nejeden)
-            case "Cl" | "Cn" | "Cz" | "Ca":
-                result = "num:card"
-            case "Cr" | "Cw":
-                result = "num:ord"
-            # TODO: what do Cu and C3 stand for?
-            case "Cu" | "C3" | "Cv" | "Co":
-                result = "num:mult"
+        # adjective
+        case "A":
+            match tag[1]:
+                # short (nominal)
+                case "C":
+                    result = "adj:short"
+                # possessive
+                case "U":
+                    result = "adj:poss"
 
-    # verbs; v:aux and v:cop overriden in rules.MOR_POS_OVERRIDES and rules.MOR_WORDS_OVERRIDES
-    elif tag.startswith("V"):
-        result = "v"
+                case _:
+                    result = "adj"
 
-    # adverbs; adv:pro and adv:pro:neg overriden in rules.MOR_POS_OVERRIDES
-    elif tag.startswith("D"):
-        result = "adv"
+        # pronoun
+        case "P":
+            match tag[1]:
+                # demonstrative
+                case "D":
+                    result = "pro:dem"
+                # personal
+                case "5" | "E" | "H" | "P":
+                    result = "pro:pers"
+                # relative
+                case "1":
+                    result = "pro:rel"
+                # relative or interrogative
+                case "4" | "Q":
+                    result = "pro:rel/int"
+                # possesive
+                case "S" | "9":
+                    result = "pro:poss"
+                # negative
+                case "W" | "Y":
+                    result = "pro:neg"
+                # indefinite
+                case "K" | "L" | "Z":
+                    result = "pro:indef"
+                # reflexive se, si...
+                # P8 (svůj) in rules.MOR_POS_OVERRIDES
+                case "6" | "7":
+                    result = "pro:refl"
 
-    elif tag.startswith("R"):  # prepositions
-        result = "prep"
+                case _:
+                    result = "pro"
 
-    # coordinating conjunction (incl. binary math. operations)
-    elif tag.startswith("J^") or tag.startswith("J*"):
-        result = "conj:coord"
-    elif tag.startswith("J,"):  # subordinate conjunction
-        result = "conj:sub"
+        # numeral
+        case "C":
+            match tag[1]:
+                # TODO: Cy = num. cardinal indef., agreement gender (nejeden)
+                case "l" | "n" | "z" | "a":
+                    result = "num:card"
+                case "r" | "w":
+                    result = "num:ord"
+                # TODO: what do Cu and C3 stand for?
+                case "u" | "3" | "v" | "o":
+                    result = "num:mult"
 
-    elif tag.startswith("T"):  # particle
-        result = "part"
+                case _:
+                    result = "num"
 
-    elif tag.startswith("I"):  # interjection
-        result = "int"
+        # verb; v:aux and v:cop overriden in rules.MOR_POS_OVERRIDES and rules.MOR_WORDS_OVERRIDES
+        case "V":
+            result = "v"
+
+        # adverb; adv:pro and adv:pro:neg overriden in rules.MOR_POS_OVERRIDES
+        case "D":
+            result = "adv"
+
+        # preposition
+        case "R":
+            result = "prep"
+
+        case "J":
+            match tag[1]:
+                # coordinating conjunction (incl. binary math. operations)
+                case "^" | "*":
+                    result = "conj:coord"
+                # subordinate conjunction
+                case ",":
+                    result = "conj:sub"
+
+        # particle
+        case "T":
+            result = "part"
+
+        # interjection
+        case "I":
+            result = "int"
+
+        # punctuation
+        case "Z":
+            result = "Z"
+
+        # abbreviations, foreign words, letters, segments, unknowns
+        case _:
+            result = "x"
 
     return result
 
