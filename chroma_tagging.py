@@ -369,13 +369,8 @@ def transform_tag(tag, word, lemma):
             gender = "MI"
         elif tag[2] in ["I", "Y"]:
             gender = "M"
-        elif lemma == "co":
-            gender = "N"
-        elif tag[2] == "X":
-            gender = _get_default_gram_cat("gender", tag, word, lemma)
-        # TODO: we might want this case to default to the default value
         elif tag[2] != "-":
-            gender = tag[2]
+            gender = _get_default_gram_cat("gender", tag, word, lemma)
 
     if tag.startswith("A") or tag.startswith("D"):
         if tag[9] == "2":  # comparative
@@ -383,6 +378,11 @@ def transform_tag(tag, word, lemma):
         if tag[9] == "3":  # superlative
             comp_deg = "SP"
 
+    # special cases
+    if lemma == "co":
+        gender = "N"
+
+    # build strings
     gram_categories = [
         form_type,
         case,
