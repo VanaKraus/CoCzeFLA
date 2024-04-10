@@ -52,13 +52,15 @@ CHAT_TO_PLAIN_TEXT = [
     (r"\[[\?]\]", r""),
     # remove quote marks
     (r'"|“|”', r""),
-    # token ending in @i, @z:ip, @z:ia, @z:in = to be tagged as an interjection
-    # bacashooga is a random string not overlapping with any existing Czech words
+    # placeholders are strings not overlapping with any existing Czech words
+    # token ending in @i, @z:ip, @z:ia, @z:in = to be marked as an interjection
     (r"@i|@z:ip|@z:ia|@z:in", constants.PLACEHOLDER_INTERJECTION),
-    # token ending in @c, @n = tag is to end with -neo
+    # token ending in @c, @n = tag is to be marked as a neolgoism
     (r"@c|@n", constants.PLACEHOLDER_NEOLOGISM),
-    # token ending in @z:f = tag is to end with -for
+    # token ending in @z:f = tag is to be marked as foreign
     (r"@z:f", constants.PLACEHOLDER_FOREIGN),
+    # token ending in @z:m is to be ignored
+    (r"@z:m", r""),
     # the function mor_line() will later re-tag these appropriately
     # Nee > ne
     (r"[Nn]ee", r"ne"),
