@@ -42,17 +42,15 @@ def convert_quotation_marks(string: str) -> str:
     return re.sub(r"[„\"]([^“\"]*)[“\"]", r"“\1”", string)
 
 
-# TODO: how should horizontal ellipsis be treated?
 def horizontal_ellipsis(string: str) -> str:
-    return string.replace("+...", "+…")
+    return string.replace("+…", "+...")
 
 
 def spaces_around_punctuation(string: str) -> str:
-    # TODO: should horizontal ellipsis be considered?
     # not end-of-line characters
     string = re.sub(r" *(,|“|”) *", r" \1 ", string).strip()
     # end-of-line characters
-    string = re.sub(r" *(\.|\?|\!|\+…|\+\.\.\.|\+/\.)$", r" \1", string).strip()
+    string = re.sub(r" *(\.|\?|\!|\+\.\.\.|\+/\.)$", r" \1", string).strip()
     # correct for spaces before end-of-line characters that are the only tokens on their lines
     string = re.sub(r"\t *", r"\t", string)
 

@@ -478,8 +478,7 @@ def mor_line(
     text = "%mor:\t" + " ".join(result)
 
     # formal adjustments to correct spaces created by tokenization
-    # TODO: do we really want to use '…'?
-    text = text.replace("+ . . .", "+…").replace("+ …", "+…").replace("+ / .", "+/.")
+    text = text.replace("+ . . .", "+...").replace("+ / .", "+/.")
 
     return text
 
