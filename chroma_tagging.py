@@ -281,6 +281,7 @@ def transform_tag(tag, word, lemma):
         None for _ in range(9)
     )
 
+    # TODO: prefix comparison doesn't make any positive difference
     # negation
     if (tag[0] == "V" and tag[10] == "N") or (
         word.startswith("ne") and not lemma.startswith("ne")
@@ -358,10 +359,8 @@ def transform_tag(tag, word, lemma):
                 if number is None:
                     number = _get_default_gram_cat("number")
 
-    # nouns, adjectives, pronouns, numerals
-    elif tag[0] in ("N", "A", "P", "C") and not tag.startswith(
-        "Cv"
-    ):  # multiplicative numerals
+    # nouns, adjectives, pronouns, numerals and not multiplicative numerals
+    elif tag[0] in ("N", "A", "P", "C") and not tag.startswith("Cv"):
         if tag[3] == "S":
             number = "SG"
         elif tag[3] in ("P", "D"):
