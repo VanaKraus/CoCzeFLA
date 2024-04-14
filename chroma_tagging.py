@@ -202,13 +202,11 @@ def pos_mor(tag: str, word: str, lemma: str):
         # numeral
         case "C":
             match tag[1]:
-                # TODO: Cy = num. cardinal indef., agreement gender (nejeden)
-                case "l" | "n" | "z" | "a":
+                case "l" | "n" | "z" | "a" | "y":
                     result = "num:card"
                 case "r" | "w":
                     result = "num:ord"
-                # TODO: what do Cu and C3 stand for?
-                case "u" | "3" | "v" | "o":
+                case "v" | "o":
                     result = "num:mult"
 
                 case _:
