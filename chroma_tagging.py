@@ -279,11 +279,8 @@ def transform_tag(tag, word, lemma):
         None for _ in range(9)
     )
 
-    # TODO: prefix comparison doesn't make any positive difference
     # negation
-    if (tag[0] == "V" and tag[10] == "N") or (
-        word.startswith("ne") and not lemma.startswith("ne")
-    ):
+    if tag[10] == "N":
         neg = "neg"
 
     # verbs
