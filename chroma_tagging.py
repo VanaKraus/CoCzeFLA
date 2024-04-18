@@ -58,60 +58,94 @@ _verbose = False
 
 
 def _log(message: str):
+    """Log a message to stderr. Requires _verbose == True
+
+    Args:
+        message (str): message to be logged
+    """
     if _verbose:
         print(message, file=sys.stderr)
 
 
-_tagger = None
-_tokenizer = None
+# cached tagger and tokenizer
+_taggers = {}
+_tokenizers = {}
 
 
-def _get_tagger() -> Tagger:
-    global _tagger
-    if _tagger is None:
-        _tagger = Tagger(constants.TAGGER_PATH)
-    return _tagger
+def _get_tagger(path: str = constants.TAGGER_PATH) -> Tagger:
+    """Get tagger instance and cache it.
+
+    Args:
+        path (str, optional): Path to MorfFlex .tagger file. Defaults to constants.TAGGER_PATH.
+
+    Returns:
+        Tagger: Tagger instance.
+    """
+    global _taggers
+
+    if path in _taggers:
+        return _taggers[path]
+    else:
+        result = Tagger(path)
+        _taggers[path] = result
+        return result
 
 
-def _get_tokenizer() -> Tokenizer:
-    global _tokenizer
-    if _tokenizer is None:
-        _tokenizer = Tokenizer(constants.TOKENIZER_TYPE)
-    return _tokenizer
+def _get_tokenizer(type: str = constants.TOKENIZER_TYPE) -> Tokenizer:
+    """Get tokenizer instance and cache it.
+
+    Args:
+        type (str, optional): MorphoDiTa tokenizer type. Defaults to constants.TOKENIZER_TYPE.
+
+    Returns:
+        Tokenizer: Tokenizer instance.
+    """
+    global _tokenizers
+
+    if type in _tokenizers:
+        return _tokenizers[type]
+    else:
+        result = Tokenizer(type)
+        _taggers[type] = result
+        return result
 
 
 def tag(text: str, tagger: Tagger = _get_tagger()) -> list[Token]:
+    """Tag text using MorphoDiTa tagger.
+
+    Args:
+        text (str): Text to be tagged.
+        tagger (Tagger, optional): Tagger to tag the text with. Defaults to _get_tagger().
+
+    Returns:
+        list[Token]
+    """
     output = list(tagger.tag(text, convert="strip_lemma_id"))
     return output
 
 
-"""
-a function for using the MorphoDiTa tagger, see https://ufal.mff.cuni.cz/morphodita
-the directory needs to be adjusted
-
-example of use: tag("vidím Mařenku")
-→ output = a list of Token objects: 
-[Token(word='vidím', lemma='vidět', tag='VB-S---1P-AA---'),
- Token(word='Mařenku', lemma='Mařenka', tag='NNFS4-----A----')]
-
-"""
-
-
 def tokenize(text: str, tokenizer: Tokenizer = _get_tokenizer()) -> list[str]:
+    """Tokenize text using MorphoDiTa tokenizer.
+
+    Args:
+        text (str): Text to be tokenized.
+        tokenizer (Tokenizer, optional): Tokenizer to tokenize the text with. Defaults to _get_tokenizer().
+
+    Returns:
+        list[str]: _description_
+    """
     return list(tokenizer.tokenize(text))
 
 
-"""
-this function takes a corpus line in the CHAT (CHILDES) format as the input and transforms it into plain text
-if the line is not to be tagged (e.g. contains only a hesitation sound), the function returns None instead
-
-example of input: "*MOT:	toho &vybavová vybarvování."
-example of output: 'toho vybarvování .'
-
-"""
-
-
 def chat_to_plain_text(chat_line: str) -> str | None:
+    """Transform a line in CHAT format to plain text.
+
+    Args:
+        chat_line (str): Line in CHAT format.
+
+    Returns:
+        str | None: Line in plain text. Return None when the line is a comment or annotation.
+    """
     if chat_line == "" or chat_line.startswith(("@", "%")):
         return None
 
@@ -126,21 +160,18 @@ def chat_to_plain_text(chat_line: str) -> str | None:
     return result
 
 
-"""
-input: (tag, word, lemma) provided in the Token object by tag()
-extracts the POS information from the tag and returns the POS value in the MOR format
-lemma in the input as well, because of the tagging of plural invariable nouns
-word in the input as well, because of the tagging of proper names
+def pos_mor(token: Token) -> str:
+    """Generate a %mor POS code for given token.
 
-For MorphoDiTa manual see: https://ufal.mff.cuni.cz/techrep/tr64.pdf
+    Args:
+        token (Token): MorphoDiTa token.
 
-example of use: pos_mor("NNFS4-----A----", "Mařenku", "Mařenka")
-→ output: 'n:prop'
+    Returns:
+        str: POS code.
+    """
 
-"""
+    word, lemma, tag = token.word, token.lemma, token.tag
 
-
-def pos_mor(tag: str, word: str, lemma: str):
     # POS values of certain lemmas are pre-defined
     if lemma in replacement_rules.MOR_POS_OVERRIDES:
         return replacement_rules.MOR_POS_OVERRIDES[lemma]
@@ -253,21 +284,29 @@ def pos_mor(tag: str, word: str, lemma: str):
 
 
 def _get_default_gram_cat(category: str) -> str:
+    """Get default value for a grammatical category. Use when the category value is unclear.
+
+    Args:
+        category (str)
+
+    Returns:
+        str: Category value.
+    """
     return constants.EMPTY_GRAM_CAT_DEFAULT[category]
 
 
-""" 
-input: (tag, word, lemma) provided in the Token object by tag()
-extracts the morphological information from the tag and returns the morphological tag in the MOR format
-lemma & word in the input as well, because of the tagging of negation and verbal aspect
+def transform_tag(token: Token) -> str:
+    """Generate a %mor tag for given token.
 
-example of use: transform_tag("NNFS4-----A----", "Mařenku", "Mařenka")
-→ output: '4&SG&F'
+    Args:
+        token (Token): MorphoDiTa token.
 
-"""
+    Returns:
+        str: %mor tag.
+    """
 
+    tag, word, lemma = token.tag, token.word, token.lemma
 
-def transform_tag(tag, word, lemma):
     # delimiters for grammatical categories and for lexical categories
     gr_delim, lex_delim = "&", "-"
 
@@ -412,7 +451,9 @@ def transform_tag(tag, word, lemma):
     return lex_delim.join([el for el in lex_categories if el])
 
 
-def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tflag,]):
+def construct_mor_word(
+    token: Token, pos_label: str, flags: dict[constants.tflag,]
+) -> str:
     if pos_label == "Z":
         return token.lemma
 
@@ -422,11 +463,7 @@ def _construct_mor_word(token: Token, pos_label: str, flags: dict[constants.tfla
     if token.word in replacement_rules.MOR_WORDS_OVERRIDES:
         return replacement_rules.MOR_WORDS_OVERRIDES[token.word]
 
-    new_tag = (
-        f"-{_tag}"
-        if (_tag := transform_tag(token.tag, token.word, token.lemma)) != ""
-        else ""
-    )
+    new_tag = f"-{_tag}" if (_tag := transform_tag(token)) != "" else ""
 
     if constants.tflag.neologism in flags:
         new_tag += "-neo"
@@ -476,13 +513,11 @@ def mor_line(
     )
 
     tagged_tokens: list[Token] = tag(text, tagger)
-    pos_labels: list[str] = [
-        pos_mor(token.tag, token.word, token.lemma) for token in tagged_tokens
-    ]
+    pos_labels: list[str] = [pos_mor(token) for token in tagged_tokens]
     result: list[str] = []
 
     for i in range(len(tagged_tokens)):
-        result.append(_construct_mor_word(tagged_tokens[i], pos_labels[i], flags[i]))
+        result.append(construct_mor_word(tagged_tokens[i], pos_labels[i], flags[i]))
     text = "%mor:\t" + " ".join(result)
 
     # formal adjustments to correct spaces created by tokenization
@@ -531,7 +566,7 @@ to process all corpus files within a folder with the function file_to_file(), th
 """
 
 
-def handle_args(args):
+def _handle_args(args):
     global _verbose
 
     if args.verbose:
@@ -587,7 +622,7 @@ def main():
     )
 
     args = parser.parse_args(sys.argv[1:])
-    handle_args(args)
+    _handle_args(args)
 
 
 if __name__ == "__main__":
