@@ -451,9 +451,19 @@ def transform_tag(token: Token) -> str:
     return lex_delim.join([el for el in lex_categories if el])
 
 
-def construct_mor_word(
-    token: Token, pos_label: str, flags: dict[constants.tflag,]
-) -> str:
+def construct_mor_word(token: Token, flags: dict[constants.tflag,] = {}) -> str:
+    """Create an entire %mor morphological annotation for the given token.
+
+    Args:
+        token (Token): MorphoDiTa token.
+        flags (dict[constants.tflag,]): Token flags of token.
+        flags (dict[constants.tflag,], optional): Token flags of `token`. Defaults to {}.
+
+    Returns:
+        str
+    """
+    pos_label = pos_mor(token)
+
     if pos_label == "Z":
         return token.lemma
 
@@ -483,18 +493,19 @@ def construct_mor_word(
     return f"{pos_label}|{lemma}{new_tag}"
 
 
-"""
-this function processes an input text
-the input text is supposed to be the result of the function chat_to_plain_text()
-the function uses the functions pos_mor() and transform_tag()
-this function assures that tagged_tokens with the placeholders starting with the string "bacashooga" are treated as required
-
-"""
-
-
 def mor_line(
-    text, tagger: Tagger = _get_tagger(), tokenizer: Tokenizer = _get_tokenizer()
-):
+    text: str, tokenizer: Tokenizer = _get_tokenizer(), tagger: Tagger = _get_tagger()
+) -> str:
+    """Create a %mor line from an input text.
+
+    Args:
+        text (str): Plain line (stripped of the speaker ID and other annotation). Words with special annotation are expected to use their appropriate placeholders (`constants.PLACEHOLDER_*`).
+        tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. Defaults to _get_tokenizer().
+        tagger (Tagger, optional): MorphoDiTa tagger to use. Defaults to _get_tagger().
+
+    Returns:
+        str: %mor line.
+    """
     flags: list[dict[constants.tflag,]] = []
     for word in tokenize(text, tokenizer):
         flag = {}
@@ -513,14 +524,13 @@ def mor_line(
     )
 
     tagged_tokens: list[Token] = tag(text, tagger)
-    pos_labels: list[str] = [pos_mor(token) for token in tagged_tokens]
     result: list[str] = []
 
     for i in range(len(tagged_tokens)):
-        result.append(construct_mor_word(tagged_tokens[i], pos_labels[i], flags[i]))
+        result.append(construct_mor_word(tagged_tokens[i], flags[i]))
     text = "%mor:\t" + " ".join(result)
 
-    # formal adjustments to correct spaces created by tokenization
+    # formal adjustments to correct unwanted spaces created by tokenization
     text = text.replace("+ . . .", "+...").replace("+ / .", "+/.")
 
     return text
@@ -529,33 +539,45 @@ def mor_line(
 def annotate_filestream(
     source_fs,
     target_fs,
-    tagger: Tagger = _get_tagger(),
     tokenizer: Tokenizer = _get_tokenizer(),
+    tagger: Tagger = _get_tagger(),
 ):
+    """Add morphological annotation to filestream.
+
+    Args:
+        source_fs: Source filestream.
+        target_fs: Target filestream.
+        tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. Defaults to _get_tokenizer().
+        tagger (Tagger, optional): MorphoDiTa tagger to use. Defaults to _get_tagger().
+    """
     for line in source_fs:
         line = line.strip(" \n")
         print(line, file=target_fs)
         line_plain_text = chat_to_plain_text(line)
         if line_plain_text and not line_plain_text in replacement_rules.SKIP_LINES:
             print(
-                mor_line(line_plain_text, tagger, tokenizer),
+                mor_line(line_plain_text, tokenizer, tagger),
                 file=target_fs,
             )
 
 
-""" 
-this function takes a file ("path" in the input) and creates a new file ("path_goal"),
-which includes the added morphological tiers
+def annotate_file(
+    path: str,
+    path_goal: str,
+    tokenizer: Tokenizer = _get_tokenizer(),
+    tagger: Tagger = _get_tagger(),
+):
+    """Add morphological annotation to single file.
 
-example of use: file_to_file("./test_files/aneta.txt", "./test_files/aneta_result.txt")
-
-"""
-
-
-def annotate_file(path, path_goal, tagger):
+    Args:
+        path (str): Path to the source file.
+        path_goal (str): Path to the target file. Existing files will be overwritten.
+        tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. Defaults to _get_tokenizer().
+        tagger (Tagger, optional): MorphoDiTa tagger to use. Defaults to _get_tagger().
+    """
     with open(path, "r") as file:
-        with open(path_goal, "a") as file_goal:
-            annotate_filestream(file, file_goal, tagger)
+        with open(path_goal, "w") as file_goal:
+            annotate_filestream(file, file_goal, tokenizer, tagger)
 
 
 """
@@ -573,7 +595,7 @@ def _handle_args(args):
         _verbose = True
 
     if args.std:
-        annotate_filestream(sys.stdin, sys.stdout, _get_tagger())
+        annotate_filestream(sys.stdin, sys.stdout)
     elif args.outdir:
         if len(args.inputfiles) == 0:
             print(
@@ -587,7 +609,7 @@ def _handle_args(args):
         for file in args.inputfiles:
             print(file, file=sys.stderr)
             target_path = os.path.join(args.outdir[0], os.path.basename(file))
-            annotate_file(file, target_path, _get_tagger())
+            annotate_file(file, target_path)
     else:
         print(
             "An output directory needs to be specified. See --help for more.",
