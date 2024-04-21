@@ -9,22 +9,34 @@ COMMENT_PREFIX = "@"
 
 
 def is_pho_line(line: str) -> bool:
+    """If line is %pho (starts with `%pho:\t`)."""
     return line.startswith(PHO_LINE_PREFIX)
 
 
 def is_comment(line: str) -> bool:
+    """If line is a comment (starts with `@`)."""
     return line.startswith(COMMENT_PREFIX)
 
 
 def clear_pho_line(line: str) -> str:
+    """Clear all characters from a %pho line except for spaces, letters, schwas and @s.
+
+    The `%pho:\t` prefix is kept if present.
+
+    Args:
+        line (str)
+
+    Returns:
+        str
+    """
     prefix = ""
     if is_pho_line(line):
         prefix, line = line[: len(PHO_LINE_PREFIX)], line[len(PHO_LINE_PREFIX) :]
 
-    # remove every non-ending character that isn't a space or a letter or @
+    # remove every non-ending character that isn't a space, letter, schwa or @
     # and every ending character that isn't a dot or a letter
     line = re.sub(
-        r"[^ @a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ](?!$)|[^\.a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]$",
+        r"[^ ə@a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ](?!$)|[^\.a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]$",
         r"",
         line,
     )
@@ -39,14 +51,17 @@ def clear_pho_line(line: str) -> str:
 
 
 def convert_quotation_marks(string: str) -> str:
+    """Convert any quoters („“; "") to English upper double quotes (“”)."""
     return re.sub(r"[„\"]([^“\"]*)[“\"]", r"“\1”", string)
 
 
 def horizontal_ellipsis(string: str) -> str:
+    """Replace the horizontal ellipsis character (`…`) with three dots (`...`)."""
     return string.replace("+…", "+...")
 
 
 def spaces_around_punctuation(string: str) -> str:
+    """Add spaces around punctuation (`,`, `“`, `”`, `.`, `?`, `!`, `+...`, `+/.`)."""
     # not end-of-line characters
     string = re.sub(r" *(,|“|”) *", r" \1 ", string).strip()
     # end-of-line characters
@@ -58,6 +73,14 @@ def spaces_around_punctuation(string: str) -> str:
 
 
 def apply_new_standard(line: str) -> str:
+    """Convert line to the new transcription standard.
+
+    Args:
+        line (str)
+
+    Returns:
+        str
+    """
     line = line.strip("\n")
 
     if is_comment(line):
@@ -74,6 +97,8 @@ def apply_new_standard(line: str) -> str:
 
 
 if __name__ == "__main__":
+    # TODO: make it easier to run the script on multiple files
+
     for line in sys.stdin:
         converted = apply_new_standard(line)
         print(converted)
