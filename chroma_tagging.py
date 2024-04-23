@@ -28,6 +28,8 @@ SOFTWARE.
 
 ***
 
+# TODO: this
+
 fundamantelly, all the functions need to be run, but for analyzing a specific file, you need to run only the last function, 
 file_to_file(), which incorporates all the other functions and from a file creates a new file with morphological tiers added
 
@@ -79,6 +81,7 @@ def _get_tagger(path: str = None) -> Tagger:
     else:
         print(f"Load MorphoDiTa tagger from '{path}'", file=sys.stderr)
         result = Tagger(path)
+        print(f"MorphoDiTa tagger loaded")
         _taggers[path] = result
         return result
 
@@ -102,6 +105,7 @@ def _get_tokenizer(type: str = None) -> Tokenizer:
     else:
         print(f"Load MorphoDiTa tokenizer (type: '{type}')", file=sys.stderr)
         result = Tokenizer(type)
+        print(f"MorphoDiTa tokenizer loaded")
         _tokenizers[type] = result
         return result
 
