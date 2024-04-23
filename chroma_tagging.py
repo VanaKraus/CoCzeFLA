@@ -60,7 +60,7 @@ _taggers = {}
 _tokenizers = {}
 
 
-def _get_tagger(path: str = constants.TAGGER_PATH) -> Tagger:
+def _get_tagger(path: str = None) -> Tagger:
     """Get tagger instance and cache it.
 
     Args:
@@ -71,15 +71,19 @@ def _get_tagger(path: str = constants.TAGGER_PATH) -> Tagger:
     """
     global _taggers
 
+    if not path:
+        path = constants.TAGGER_PATH
+
     if path in _taggers:
         return _taggers[path]
     else:
+        print(f"Load MorphoDiTa tagger from '{path}'", file=sys.stderr)
         result = Tagger(path)
         _taggers[path] = result
         return result
 
 
-def _get_tokenizer(type: str = constants.TOKENIZER_TYPE) -> Tokenizer:
+def _get_tokenizer(type: str = None) -> Tokenizer:
     """Get tokenizer instance and cache it.
 
     Args:
@@ -90,15 +94,19 @@ def _get_tokenizer(type: str = constants.TOKENIZER_TYPE) -> Tokenizer:
     """
     global _tokenizers
 
+    if not type:
+        type = constants.TOKENIZER_TYPE
+
     if type in _tokenizers:
         return _tokenizers[type]
     else:
+        print(f"Load MorphoDiTa tokenizer (type: '{type}')", file=sys.stderr)
         result = Tokenizer(type)
-        _taggers[type] = result
+        _tokenizers[type] = result
         return result
 
 
-def tag(text: str, tagger: Tagger = _get_tagger()) -> list[Token]:
+def tag(text: str, tagger: Tagger = None) -> list[Token]:
     """Tag text using MorphoDiTa tagger.
 
     Args:
@@ -108,11 +116,14 @@ def tag(text: str, tagger: Tagger = _get_tagger()) -> list[Token]:
     Returns:
         list[Token]
     """
+    if not tagger:
+        tagger = _get_tagger()
+
     output = list(tagger.tag(text, convert="strip_lemma_id"))
     return output
 
 
-def tokenize(text: str, tokenizer: Tokenizer = _get_tokenizer()) -> list[str]:
+def tokenize(text: str, tokenizer: Tokenizer = None) -> list[str]:
     """Tokenize text using MorphoDiTa tokenizer.
 
     Args:
@@ -122,6 +133,9 @@ def tokenize(text: str, tokenizer: Tokenizer = _get_tokenizer()) -> list[str]:
     Returns:
         list[str]: _description_
     """
+    if not tokenizer:
+        tokenizer = _get_tokenizer()
+
     return list(tokenizer.tokenize(text))
 
 
@@ -481,9 +495,7 @@ def construct_mor_word(token: Token, flags: dict[constants.tflag,] = {}) -> str:
     return f"{pos_label}|{lemma}{new_tag}"
 
 
-def mor_line(
-    text: str, tokenizer: Tokenizer = _get_tokenizer(), tagger: Tagger = _get_tagger()
-) -> str:
+def mor_line(text: str, tokenizer: Tokenizer = None, tagger: Tagger = None) -> str:
     """Create a %mor line from an input text.
 
     Args:
@@ -494,6 +506,11 @@ def mor_line(
     Returns:
         str: %mor line.
     """
+    if not tokenizer:
+        tokenizer = _get_tokenizer()
+    if not tagger:
+        tagger = _get_tagger()
+
     flags: list[dict[constants.tflag,]] = []
     for word in tokenize(text, tokenizer):
         flag = {}
@@ -527,8 +544,8 @@ def mor_line(
 def annotate_filestream(
     source_fs,
     target_fs,
-    tokenizer: Tokenizer = _get_tokenizer(),
-    tagger: Tagger = _get_tagger(),
+    tokenizer: Tokenizer = None,
+    tagger: Tagger = None,
 ):
     """Add morphological annotation to filestream.
 
@@ -538,6 +555,11 @@ def annotate_filestream(
         tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. Defaults to _get_tokenizer().
         tagger (Tagger, optional): MorphoDiTa tagger to use. Defaults to _get_tagger().
     """
+    if not tokenizer:
+        tokenizer = _get_tokenizer()
+    if not tagger:
+        tagger = _get_tagger()
+
     for line in source_fs:
         line = line.strip(" \n")
         print(line, file=target_fs)
@@ -552,8 +574,8 @@ def annotate_filestream(
 def annotate_file(
     path_source: str,
     path_target: str,
-    tokenizer: Tokenizer = _get_tokenizer(),
-    tagger: Tagger = _get_tagger(),
+    tokenizer: Tokenizer = None,
+    tagger: Tagger = None,
 ):
     """Add morphological annotation to single file.
 
@@ -564,9 +586,15 @@ def annotate_file(
         tagger (Tagger, optional): MorphoDiTa tagger to use. Defaults to _get_tagger().
     """
 
+    if not tokenizer:
+        tokenizer = _get_tokenizer()
+    if not tagger:
+        tagger = _get_tagger()
+
     try:
         with open(path_source, "r") as source_fs:
             with open(path_target, "w") as target_fs:
+                print(f"Annotate file '{path_source}'", file=sys.stderr)
                 annotate_filestream(source_fs, target_fs, tokenizer, tagger)
     except IsADirectoryError:
         print(f"Skipping {path_source}: it's a directory", file=sys.stderr)
@@ -575,6 +603,12 @@ def annotate_file(
 
 
 def _handle_args(args):
+    if args.tagger:
+        constants.TAGGER_PATH = args.tagger[0]
+
+    if args.tokenizer:
+        constants.TOKENIZER_TYPE = args.tokenizer[0]
+
     # take input from stdin
     if args.std:
         annotate_filestream(sys.stdin, sys.stdout)
@@ -606,7 +640,6 @@ def _handle_args(args):
         for input_file, output_file in files:
             if not os.path.isdir(dname := os.path.dirname(output_file)):
                 os.makedirs(dname)
-            print(input_file, file=sys.stderr)
             annotate_file(input_file, output_file)
     else:
         print(
@@ -638,6 +671,20 @@ if __name__ == "__main__":
         nargs=1,
         type=str,
         help="take all .txt files from this directory as the input; enabling this option overrides all other inputfiles",
+    )
+    parser.add_argument(
+        "-d",
+        "--tokenizer",
+        nargs=1,
+        type=str,
+        help="configure MorphoDiTa tokenizer type; overrides any tokenizer type specified in constants.TOKENIZER_TYPE",
+    )
+    parser.add_argument(
+        "-t",
+        "--tagger",
+        nargs=1,
+        type=str,
+        help="configure MorphoDiTa tagger; overrides any tagger specified in constants.TAGGER_PATH",
     )
     parser.add_argument("inputfiles", nargs="*", default=[])
 
