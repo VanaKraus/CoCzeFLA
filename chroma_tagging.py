@@ -48,24 +48,12 @@ import replacement_rules
 import word_definitions as words
 
 from corpy.morphodita import Tagger, Token, Tokenizer
+from nltk.corpus import PlaintextCorpusReader
 
 import argparse
 import re
 import sys
 import os
-
-_verbose = False
-
-
-def _log(message: str):
-    """Log a message to stderr. Requires _verbose == True
-
-    Args:
-        message (str): message to be logged
-    """
-    if _verbose:
-        print(message, file=sys.stderr)
-
 
 # cached tagger and tokenizer
 _taggers = {}
@@ -562,54 +550,64 @@ def annotate_filestream(
 
 
 def annotate_file(
-    path: str,
-    path_goal: str,
+    path_source: str,
+    path_target: str,
     tokenizer: Tokenizer = _get_tokenizer(),
     tagger: Tagger = _get_tagger(),
 ):
     """Add morphological annotation to single file.
 
     Args:
-        path (str): Path to the source file.
-        path_goal (str): Path to the target file. Existing files will be overwritten.
+        path_source (str): Path to the source file.
+        path_target (str): Path to the target file. Existing files will be overwritten.
         tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. Defaults to _get_tokenizer().
         tagger (Tagger, optional): MorphoDiTa tagger to use. Defaults to _get_tagger().
     """
-    with open(path, "r") as file:
-        with open(path_goal, "w") as file_goal:
-            annotate_filestream(file, file_goal, tokenizer, tagger)
 
-
-"""
-to process all corpus files within a folder with the function file_to_file(), the following code was used
-(the folder here was named "Sara" and included all corpus files for the child nicknamed "Sara")
-(all the new files will be found in a new folder, titled "Sara_tagged")
-
-"""
+    try:
+        with open(path_source, "r") as source_fs:
+            with open(path_target, "w") as target_fs:
+                annotate_filestream(source_fs, target_fs, tokenizer, tagger)
+    except IsADirectoryError:
+        print(f"Skipping {path_source}: it's a directory", file=sys.stderr)
+    except FileNotFoundError:
+        print(f"Skipping {path_source}: file not found", file=sys.stderr)
 
 
 def _handle_args(args):
-    global _verbose
-
-    if args.verbose:
-        _verbose = True
-
+    # take input from stdin
     if args.std:
         annotate_filestream(sys.stdin, sys.stdout)
+    # take files as input
     elif args.outdir:
-        if len(args.inputfiles) == 0:
+        files: list[tuple[str, str]] = []
+
+        # an input directory specified
+        if args.indir:
+            reader = PlaintextCorpusReader(args.indir[0], r".*\.txt", encoding="utf-8")
+            files = [
+                (os.path.join(args.indir[0], id), os.path.join(args.outdir[0], id))
+                for id in reader.fileids()
+            ]
+
+        # individual files specified as input
+        elif len(args.inputfiles) > 0:
+            files = [
+                (file, os.path.join(args.outdir[0], os.path.basename(file)))
+                for file in args.inputfiles
+            ]
+        else:
             print(
                 "Please specify your input files. See --help for more.", file=sys.stderr
             )
             return
 
-        if not os.path.isdir(args.outdir[0]):
-            os.makedirs(args.outdir[0])
-
-        for file in args.inputfiles:
-            print(file, file=sys.stderr)
-            target_path = os.path.join(args.outdir[0], os.path.basename(file))
-            annotate_file(file, target_path)
+        # run file annotation
+        for input_file, output_file in files:
+            if not os.path.isdir(dname := os.path.dirname(output_file)):
+                os.makedirs(dname)
+            print(input_file, file=sys.stderr)
+            annotate_file(input_file, output_file)
     else:
         print(
             "An output directory needs to be specified. See --help for more.",
@@ -617,10 +615,9 @@ def _handle_args(args):
         )
 
 
-def main():
-    # TODO: review
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Add morphological annotation according to the CoCzeFLA standards to a text file. REVIEW"
+        description="Add morphological annotation to a CHAT text file according to the CoCzeFLA standards."
     )
     parser.add_argument(
         "-s",
@@ -635,17 +632,14 @@ def main():
         type=str,
         help="directory where output files should be stored",
     )
-    parser.add_argument("inputfiles", nargs="*", default=[])
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="print runtime messages to stderr; if disabled, no logging is done",
+        "-i",
+        "--indir",
+        nargs=1,
+        type=str,
+        help="take all .txt files from this directory as the input; enabling this option overrides all other inputfiles",
     )
+    parser.add_argument("inputfiles", nargs="*", default=[])
 
     args = parser.parse_args(sys.argv[1:])
     _handle_args(args)
-
-
-if __name__ == "__main__":
-    main()

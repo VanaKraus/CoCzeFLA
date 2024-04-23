@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+# TODO: license
+
+from nltk.corpus import PlaintextCorpusReader
+
+import argparse
+import os
 import re
 import sys
 
@@ -96,9 +102,101 @@ def apply_new_standard(line: str) -> str:
     return line
 
 
-if __name__ == "__main__":
-    # TODO: make it easier to run the script on multiple files
+def convert_filestream(source_fs, target_fs):
+    """Convert filestream.
 
-    for line in sys.stdin:
+    Args:
+        source_fs: Source filestream.
+        target_fs: Target filestream.
+    """
+    for line in source_fs:
         converted = apply_new_standard(line)
-        print(converted)
+        print(converted, file=target_fs)
+
+
+def convert_file(path_source: str, path_target: str):
+    """Convert single file.
+
+    Args:
+        path_source (str): Path to the source file.
+        path_target (str): Path to the target file. Existing files will be overwritten.
+    """
+    try:
+        with open(path_source, "r") as source_fs:
+            with open(path_target, "w") as target_fs:
+                convert_filestream(source_fs, target_fs)
+    except IsADirectoryError:
+        print(f"Skipping {path_source}: it's a directory", file=sys.stderr)
+    except FileNotFoundError:
+        print(f"Skipping {path_source}: file not found", file=sys.stderr)
+
+
+def _handle_args(args):
+    # take input from stdin
+    if args.std:
+        convert_filestream(sys.stdin, sys.stdout)
+    # take files as input
+    elif args.outdir:
+        files: list[tuple[str, str]] = []
+
+        # an input directory specified
+        if args.indir:
+            reader = PlaintextCorpusReader(args.indir[0], r".*\.txt", encoding="utf-8")
+            files = [
+                (os.path.join(args.indir[0], id), os.path.join(args.outdir[0], id))
+                for id in reader.fileids()
+            ]
+
+        # individual files specified as input
+        elif len(args.inputfiles) > 0:
+            files = [
+                (file, os.path.join(args.outdir[0], os.path.basename(file)))
+                for file in args.inputfiles
+            ]
+        else:
+            print(
+                "Please specify your input files. See --help for more.", file=sys.stderr
+            )
+            return
+
+        # run file conversion
+        for input_file, output_file in files:
+            if not os.path.isdir(dname := os.path.dirname(output_file)):
+                os.makedirs(dname)
+            print(input_file, file=sys.stderr)
+            convert_file(input_file, output_file)
+    else:
+        print(
+            "An output directory needs to be specified. See --help for more.",
+            file=sys.stderr,
+        )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="convert CHAT text files to the v3.1 transcription standard."
+    )
+    parser.add_argument(
+        "-s",
+        "--std",
+        action="store_true",
+        help="receive/print input/output on stdin/stdout",
+    )
+    parser.add_argument(
+        "-o",
+        "--outdir",
+        nargs=1,
+        type=str,
+        help="directory where output files should be stored",
+    )
+    parser.add_argument(
+        "-i",
+        "--indir",
+        nargs=1,
+        type=str,
+        help="take all .txt files from this directory as the input; enabling this option overrides all other inputfiles",
+    )
+    parser.add_argument("inputfiles", nargs="*", default=[])
+
+    args = parser.parse_args(sys.argv[1:])
+    _handle_args(args)
