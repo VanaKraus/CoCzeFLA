@@ -1,7 +1,8 @@
 import constants
 import word_definitions as words
 
-CHAT_TO_PLAIN_TEXT = [
+# list: tuple: (pattern, replacement)
+CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # remove participant roles from the start of lines
     (r"\*(CHI|MOT|FAT|GRA|SIS|SIT|BRO|ADU):\t", ""),
     # remove "<xyz>" followed by "[/]", "[//]" or e.g. "[=! básnička]"
@@ -78,7 +79,8 @@ CHAT_TO_PLAIN_TEXT = [
     (r"\s+$", r""),
 ]
 
-MOR_WORDS_OVERRIDES = {
+# dict: {word, MOR word}
+MOR_WORDS_OVERRIDES: dict[str, str] = {
     # lexically specified "exceptions": "mami" always to be tagged as "n|máma-5&SG&F" etc.
     "mami": "n|máma-5&SG&F",
     "no": "part|no",
@@ -117,9 +119,9 @@ MOR_WORDS_OVERRIDES = {
 }
 
 # dict: {word form: target lemma}
-MOR_WORDS_LEMMA_OVERRIDES = {
-    form: l_list[0]
-    for l_list in [
+MOR_WORDS_LEMMA_OVERRIDES: dict[str, str] = {
+    word: word_list[0]
+    for word_list in [
         words.PERS_PRONOUN_1PL,
         words.PERS_PRONOUN_2PL,
         words.POSS_PRONOUN_1PL,
@@ -128,11 +130,11 @@ MOR_WORDS_LEMMA_OVERRIDES = {
         words.POSS_PRONOUN_M_N_3SG,
         words.POSS_PRONOUN_F_3SG,
     ]
-    for form in l_list
+    for word in word_list
 }
 
 # dict: {lemma: pos}
-MOR_POS_OVERRIDES = (
+MOR_POS_OVERRIDES: dict[str, str] = (
     {lemma: "adv:pro" for lemma in words.PRONOMINAL_ADVERBS}
     | {lemma: "adv:pro:neg" for lemma in words.NEGATIVE_PRONOMINAL_ADVERBS}
     | {lemma: "n:pt" for lemma in words.PLURAL_INVARIABLE_NOUNS}
@@ -149,4 +151,4 @@ MOR_POS_OVERRIDES = (
 )
 
 # lines not to be annotated
-SKIP_LINES = [".", "0 ."]
+SKIP_LINES: list[str] = [".", "0 ."]

@@ -46,7 +46,7 @@ files with this script is thus rather slow), even though it thus this job as wel
 """
 
 import constants
-import replacement_rules
+import replacement_rules as rules
 import word_definitions as words
 
 from corpy.morphodita import Tagger, Token, Tokenizer
@@ -62,11 +62,11 @@ _taggers = {}
 _tokenizers = {}
 
 
-def _get_tagger(path: str = None) -> Tagger:
+def _get_tagger(path: str | None = None) -> Tagger:
     """Get tagger instance and cache it.
 
     Args:
-        path (str, optional): Path to MorfFlex .tagger file. Defaults to constants.TAGGER_PATH.
+        path (str | None, optional): Path to MorfFlex .tagger file. When path == None, constants.TAGGER_PATH is used. Defaults to None.
 
     Returns:
         Tagger: Tagger instance.
@@ -79,18 +79,18 @@ def _get_tagger(path: str = None) -> Tagger:
     if path in _taggers:
         return _taggers[path]
     else:
-        print(f"Load MorphoDiTa tagger from '{path}'", file=sys.stderr)
+        print(f"Load MorphoDiTa tagger from {path = }", file=sys.stderr)
         result = Tagger(path)
-        print(f"MorphoDiTa tagger loaded")
+        print("MorphoDiTa tagger loaded", file=sys.stderr)
         _taggers[path] = result
         return result
 
 
-def _get_tokenizer(type: str = None) -> Tokenizer:
+def _get_tokenizer(type: str | None = None) -> Tokenizer:
     """Get tokenizer instance and cache it.
 
     Args:
-        type (str, optional): MorphoDiTa tokenizer type. Defaults to constants.TOKENIZER_TYPE.
+        type (str | None, optional): MorphoDiTa tokenizer type. When type == None, constants.TOKENIZER_TYPE is used. Defaults to None.
 
     Returns:
         Tokenizer: Tokenizer instance.
@@ -103,19 +103,19 @@ def _get_tokenizer(type: str = None) -> Tokenizer:
     if type in _tokenizers:
         return _tokenizers[type]
     else:
-        print(f"Load MorphoDiTa tokenizer (type: '{type}')", file=sys.stderr)
+        print(f"Load MorphoDiTa tokenizer ({type = })", file=sys.stderr)
         result = Tokenizer(type)
-        print(f"MorphoDiTa tokenizer loaded")
+        print("MorphoDiTa tokenizer loaded", file=sys.stderr)
         _tokenizers[type] = result
         return result
 
 
-def tag(text: str, tagger: Tagger = None) -> list[Token]:
+def tag(text: str, tagger: Tagger | None = None) -> list[Token]:
     """Tag text using MorphoDiTa tagger.
 
     Args:
         text (str): Text to be tagged.
-        tagger (Tagger, optional): Tagger to tag the text with. Defaults to _get_tagger().
+        tagger (Tagger | None, optional): Tagger to tag the text with. When tagger == None, _get_tagger() is used. Defaults to None.
 
     Returns:
         list[Token]
@@ -127,12 +127,12 @@ def tag(text: str, tagger: Tagger = None) -> list[Token]:
     return output
 
 
-def tokenize(text: str, tokenizer: Tokenizer = None) -> list[str]:
+def tokenize(text: str, tokenizer: Tokenizer | None = None) -> list[str]:
     """Tokenize text using MorphoDiTa tokenizer.
 
     Args:
         text (str): Text to be tokenized.
-        tokenizer (Tokenizer, optional): Tokenizer to tokenize the text with. Defaults to _get_tokenizer().
+        tokenizer (Tokenizer | None, optional): Tokenizer to tokenize the text with. When tokenizer == None, _get_tokenizer() is used. Defaults to None.
 
     Returns:
         list[str]: _description_
@@ -157,7 +157,7 @@ def chat_to_plain_text(chat_line: str) -> str | None:
 
     result = chat_line
 
-    for rule in replacement_rules.CHAT_TO_PLAIN_TEXT:
+    for rule in rules.CHAT_TO_PLAIN_TEXT:
         if result == "":
             break
 
@@ -179,8 +179,8 @@ def pos_mor(token: Token) -> str:
     word, lemma, tag = token.word, token.lemma, token.tag
 
     # POS values of certain lemmas are pre-defined
-    if lemma in replacement_rules.MOR_POS_OVERRIDES:
-        return replacement_rules.MOR_POS_OVERRIDES[lemma]
+    if lemma in rules.MOR_POS_OVERRIDES:
+        return rules.MOR_POS_OVERRIDES[lemma]
 
     result = ""
 
@@ -476,8 +476,8 @@ def construct_mor_word(token: Token, flags: dict[constants.tflag,] = {}) -> str:
     if constants.tflag.interjection in flags:
         return f"int|{token.word}"
 
-    if token.word in replacement_rules.MOR_WORDS_OVERRIDES:
-        return replacement_rules.MOR_WORDS_OVERRIDES[token.word]
+    if token.word in rules.MOR_WORDS_OVERRIDES:
+        return rules.MOR_WORDS_OVERRIDES[token.word]
 
     new_tag = f"-{_tag}" if (_tag := transform_tag(token)) != "" else ""
 
@@ -489,8 +489,8 @@ def construct_mor_word(token: Token, flags: dict[constants.tflag,] = {}) -> str:
     lemma = token.lemma
 
     # plural central pronouns to be lemmatized as e.g. "my" or "náš" rather than forms of "já" or "můj"
-    if token.word in replacement_rules.MOR_WORDS_LEMMA_OVERRIDES:
-        lemma = replacement_rules.MOR_WORDS_LEMMA_OVERRIDES[token.word]
+    if token.word in rules.MOR_WORDS_LEMMA_OVERRIDES:
+        lemma = rules.MOR_WORDS_LEMMA_OVERRIDES[token.word]
 
     # neologisms not to be lemmatized
     elif constants.tflag.neologism in flags:
@@ -499,13 +499,15 @@ def construct_mor_word(token: Token, flags: dict[constants.tflag,] = {}) -> str:
     return f"{pos_label}|{lemma}{new_tag}"
 
 
-def mor_line(text: str, tokenizer: Tokenizer = None, tagger: Tagger = None) -> str:
+def mor_line(
+    text: str, tokenizer: Tokenizer | None = None, tagger: Tagger | None = None
+) -> str:
     """Create a %mor line from an input text.
 
     Args:
         text (str): Plain line (stripped of the speaker ID and other annotation). Words with special annotation are expected to use their appropriate placeholders (`constants.PLACEHOLDER_*`).
-        tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. Defaults to _get_tokenizer().
-        tagger (Tagger, optional): MorphoDiTa tagger to use. Defaults to _get_tagger().
+        tokenizer (Tokenizer | None, optional): MorphoDiTa tokenizer to use. When tokenizer == None, _get_tokenizer() is used. Defaults to None.
+        tagger (Tagger | None, optional): MorphoDiTa tagger to use. When tagger == None, _get_tagger() is used. Defaults to None.
 
     Returns:
         str: %mor line.
@@ -568,7 +570,7 @@ def annotate_filestream(
         line = line.strip(" \n")
         print(line, file=target_fs)
         line_plain_text = chat_to_plain_text(line)
-        if line_plain_text and not line_plain_text in replacement_rules.SKIP_LINES:
+        if line_plain_text and not line_plain_text in rules.SKIP_LINES:
             print(
                 mor_line(line_plain_text, tokenizer, tagger),
                 file=target_fs,
@@ -578,16 +580,16 @@ def annotate_filestream(
 def annotate_file(
     path_source: str,
     path_target: str,
-    tokenizer: Tokenizer = None,
-    tagger: Tagger = None,
+    tokenizer: Tokenizer | None = None,
+    tagger: Tagger | None = None,
 ):
     """Add morphological annotation to single file.
 
     Args:
         path_source (str): Path to the source file.
         path_target (str): Path to the target file. Existing files will be overwritten.
-        tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. Defaults to _get_tokenizer().
-        tagger (Tagger, optional): MorphoDiTa tagger to use. Defaults to _get_tagger().
+        tokenizer (Tokenizer | None, optional): MorphoDiTa tokenizer to use. When tokenizer == None, _get_tokenizer() is used. Defaults to None.
+        tagger (Tagger | None, optional): MorphoDiTa tagger to use. When tagger == None, _get_tagger() is used. Defaults to None.
     """
 
     if not tokenizer:
@@ -674,7 +676,7 @@ if __name__ == "__main__":
         "--indir",
         nargs=1,
         type=str,
-        help="take all .txt files from this directory as the input; enabling this option overrides all other inputfiles",
+        help="take all .txt files from this directory as the input; enabling this option overrides all inputfiles",
     )
     parser.add_argument(
         "-d",

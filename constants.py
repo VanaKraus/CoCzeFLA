@@ -1,14 +1,14 @@
 from enum import Enum
 
-TAGGER_PATH = (
+TAGGER_PATH: str = (
     "_local/czech-morfflex2.0-pdtc1.0-220710/czech-morfflex2.0-pdtc1.0-220710.tagger"
 )
 
-TOKENIZER_TYPE = "czech"
+TOKENIZER_TYPE: str = "czech"
 
-PLACEHOLDER_INTERJECTION = "bacashoogacit"
-PLACEHOLDER_NEOLOGISM = "bacashoogachi"
-PLACEHOLDER_FOREIGN = "bacashoogaciz"
+PLACEHOLDER_INTERJECTION: str = "bacashoogacit"
+PLACEHOLDER_NEOLOGISM: str = "bacashoogachi"
+PLACEHOLDER_FOREIGN: str = "bacashoogaciz"
 
 
 # token flags
@@ -20,7 +20,7 @@ class tflag(Enum):
 
 
 # default values for empty grammatical categories
-EMPTY_GRAM_CAT_DEFAULT = {
+EMPTY_GRAM_CAT_DEFAULT: dict[str, str] = {
     "case": "x_pad",
     "person": "x_osoba",
     "number": "x_cislo",

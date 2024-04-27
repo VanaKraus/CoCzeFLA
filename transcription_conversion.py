@@ -194,7 +194,7 @@ if __name__ == "__main__":
         "--indir",
         nargs=1,
         type=str,
-        help="take all .txt files from this directory as the input; enabling this option overrides all other inputfiles",
+        help="take all .txt files from this directory as the input; enabling this option overrides all inputfiles",
     )
     parser.add_argument("inputfiles", nargs="*", default=[])
 
