@@ -58,8 +58,8 @@ import sys
 import os
 
 # cached tagger and tokenizer
-_taggers = {}
-_tokenizers = {}
+_taggers: dict[str, Tagger] = {}
+_tokenizers: dict[str, Tokenizer] = {}
 
 
 def _get_tagger(path: str | None = None) -> Tagger:
