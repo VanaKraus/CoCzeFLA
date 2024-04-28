@@ -2,13 +2,12 @@
 
 # TODO: license
 
-from nltk.corpus import PlaintextCorpusReader
-
 import argparse
 import os
 import re
 import sys
 
+from nltk.corpus import PlaintextCorpusReader
 
 PHO_LINE_PREFIX = "%pho:\t"
 COMMENT_PREFIX = "@"
@@ -122,13 +121,14 @@ def convert_file(path_source: str, path_target: str):
         path_target (str): Path to the target file. Existing files will be overwritten.
     """
     try:
-        with open(path_source, "r") as source_fs:
-            with open(path_target, "w") as target_fs:
+        with open(path_source, "r", encoding="utf-8") as source_fs:
+            with open(path_target, "w", encoding="utf-8") as target_fs:
+                print(f"Convert\t: {path_source}", file=sys.stderr)
                 convert_filestream(source_fs, target_fs)
     except IsADirectoryError:
-        print(f"Skipping {path_source}: it's a directory", file=sys.stderr)
+        print(f"Skip\t: {path_source} (directory)", file=sys.stderr)
     except FileNotFoundError:
-        print(f"Skipping {path_source}: file not found", file=sys.stderr)
+        print(f"Skip\t: {path_source} (not found)", file=sys.stderr)
 
 
 def _handle_args(args):
@@ -163,7 +163,6 @@ def _handle_args(args):
         for input_file, output_file in files:
             if not os.path.isdir(dname := os.path.dirname(output_file)):
                 os.makedirs(dname)
-            print(input_file, file=sys.stderr)
             convert_file(input_file, output_file)
     else:
         print(
@@ -198,5 +197,5 @@ if __name__ == "__main__":
     )
     parser.add_argument("inputfiles", nargs="*", default=[])
 
-    args = parser.parse_args(sys.argv[1:])
-    _handle_args(args)
+    arguments = parser.parse_args(sys.argv[1:])
+    _handle_args(arguments)
