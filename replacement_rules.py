@@ -8,7 +8,7 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # remove "<xyz>" followed by "[/]", "[//]" or e.g. "[=! básnička]"
     # e.g. [básnička = poem]: *CHI:	<máme_tady_xxx_a_pěkný_bububínek_je_tam_jedno_kůzlátko_a_už_nevylezlo> [=! básnička].
     (
-        r"<[ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+> \[(\/{1,2}|=! (básnička|písnička|zpěv))\]",
+        r"<[ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+> \[(\/{1,2}|=! (básnička|zpěv))\]",
         "",
     ),
     # renove all material between "&=" and a space, including cases such as "&=imit:xxx"
@@ -22,11 +22,6 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
         r"[0&][a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+",
         "",
     ),
-    # <xyz> [=! xxx]
-    (
-        r"\[\=\! [ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+\]",
-        "",
-    ),
     # remove repetition marking, e.g. [x 2]
     # an optional space after the number, because there was a line with "[x 4 ] ." at which the script broke down
     (r"\[x [0-9]+ ?\]", ""),
@@ -35,8 +30,8 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
         r"[a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+ \[:([ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)\]",
         r"\1",
     ),
-    # lengthened vowels
-    (r"([eaiyouáéěíýóúůrsš]):", r"\1"),
+    # lengthened sounds
+    (r"([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]):", r"\1"),
     # interjections with underscores
     (r"_", r""),
     # remove "^", "(.)", "[*]"
@@ -72,7 +67,7 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # remove excessive whitespaces and turn them into regular spaces
     (r"\s{1,}", r" "),
     # remove commas that are not separating anything
-    (r"(, )+(\.|\?|\!|\+\.\.\.|\+\/\.)", r"\2"),
+    (r"(, )+(\.|\?|\!|\+\.\.\.|\+\/\.|,)", r"\2"),
     (r"^\s+,", r""),
     # remove leading and trailing whitespaces
     (r"^\s+", r""),
@@ -113,6 +108,7 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     "ses": "pro:refl_v:aux|se_být-4&SG_2&SG&ind&pres&akt&impf",
     "sis": "pro:refl_v:aux|se_být-3&SG_2&SG&ind&pres&akt&impf",
     "zač": "prep_pro:int|za_co-4&SG&N",
+    #  to be tagged as interjections
     "hm": "int|hm",
     "mhm": "int|mhm",
     "emem": "int|emem",
@@ -140,8 +136,6 @@ MOR_POS_OVERRIDES: dict[str, str] = (
     | {lemma: "n:pt" for lemma in words.PLURAL_INVARIABLE_NOUNS}
     | {lemma: "n:prop:pt" for lemma in words.PLURAL_INVARIABLE_PROPER_NOUNS}
     | {lemma: "v:mod" for lemma in words.MODAL_VERBS}
-    | {lemma: "adv:pro" for lemma in words.PRONOMINAL_ADVERBS}
-    | {lemma: "adv:pro:neg" for lemma in words.NEGATIVE_PRONOMINAL_ADVERBS}
     | {
         "každý": "pro:indef",
         "svůj": "pro:refl:poss",

@@ -329,6 +329,8 @@ def transform_tag(token: Token) -> str:
 
     # verbs
     if tag[0] == "V":
+        # TODO: make category conversions from MorphoDiTa's tags clearer (less nested)
+
         # aspect
         if lemma in words.IMPERFECTIVE_VERBS:
             aspect = "impf"
@@ -378,6 +380,7 @@ def transform_tag(token: Token) -> str:
                 if number is None:
                     number = _get_default_gram_cat("number")
 
+            # TODO: implement transgressives?
             # if it's neither an infinitive nor a participle
             case _:
                 if tag[7] in ("1", "2", "3"):
@@ -393,7 +396,6 @@ def transform_tag(token: Token) -> str:
                         tense = "pres"
                     elif tag[8] == "F":
                         tense = "futur"
-                # else: transgressive
 
                 if number is None:
                     number = _get_default_gram_cat("number")
