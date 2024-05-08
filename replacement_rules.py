@@ -31,8 +31,6 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
         r"[a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+ \[:([ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)\]",
         r"\1",
     ),
-    # lengthened sounds
-    (r"([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]):", r"\1"),
     # interjections with underscores
     (r"_", r""),
     # remove "^", "(.)", "[*]"
@@ -54,6 +52,8 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     (r"@z:f", constants.PLACEHOLDER_FOREIGN),
     # token ending in @z:m is to be ignored
     (r"@z:m", r""),
+    # lengthened sounds
+    (r"([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]):", r"\1"),
     # the function mor_line() will later re-tag these appropriately
     # Nee > ne
     (r"[Nn]ee", r"ne"),

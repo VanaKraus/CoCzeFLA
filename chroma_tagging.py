@@ -536,17 +536,18 @@ def construct_mor_word(token: Token, flags: dict[constants.tflag, Any] = None) -
         return token.lemma
 
     if constants.tflag.interjection in flags:
-        return f"int|{token.word}"
+        return f"int|{token.lemma}"
+
+    if constants.tflag.neologism in flags:
+        return f"x|{token.word}-neo"
+
+    if constants.tflag.foreign in flags:
+        return f"x|{token.word}-for"
 
     if token.word in rules.MOR_WORDS_OVERRIDES:
         return rules.MOR_WORDS_OVERRIDES[token.word]
 
     new_tag = f"-{_tag}" if (_tag := transform_tag(token)) != "" else ""
-
-    if constants.tflag.neologism in flags:
-        new_tag += "-neo"
-    elif constants.tflag.foreign in flags:
-        new_tag += "-for"
 
     lemma = token.lemma
 
