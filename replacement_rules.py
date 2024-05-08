@@ -98,6 +98,13 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     "si": "pro:refl|se-3&SG",
     # the uninflected "jejichž" to be tagged as follows
     "jejichž": "pro:rel:poss|jejichž-x_pad&x_cislo&x_jmenny_rod",
+    # conditional auxiliaries as MorfFlex2 doesn't assign person and number to them
+    "bych": "v:aux|být-1&SG&cond&akt&impf",
+    "bys": "v:aux|být-2&SG&cond&akt&impf",
+    "by": "v:aux|být-3&x_cislo&cond&akt&impf",
+    "bychom": "v:aux|být-1&PL&cond&akt&impf",
+    "bysme": "v:aux|být-1&PL&cond&akt&impf",
+    "byste": "v:aux|být-2&PL&cond&akt&impf",
     # double lemmatization for forms of "aby.*" and "kdyby.*" + "ses", "sis", and "zač"
     "abych": "conj:sub_v:aux|aby_být-1&SG&cond&akt&impf",
     "abys": "conj:sub_v:aux|aby_být-2&SG&cond&akt&impf",
