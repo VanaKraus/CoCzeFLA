@@ -444,37 +444,52 @@ def transform_tag(token: Token) -> str:
 
     # nouns, adjectives, pronouns, numerals and not multiplicative numerals
     elif tag[0] in ("N", "A", "P", "C") and not tag.startswith("Cv"):
-        if tag[3] == "S":
-            number = "SG"
-        elif tag[3] in ("P", "D"):
-            number = "PL"
-        else:
-            number = _get_default_gram_cat("number")
+        # gender
+        match tag[2]:
+            # discriminate animate and inanimate masculines for nouns only
+            case "M":
+                gender = "MA" if tag[0] == "N" else "M"
+            case "I":
+                gender = "MI" if tag[0] == "N" else "M"
+            case "Y":
+                gender = "M"
+            case "F":
+                gender = "F"
+            case "N":
+                gender = "N"
+            case "-":
+                pass
+            case _:  # cases when MorphoDiTa wasn't sure
+                gender = _get_default_gram_cat("gender")
 
-        if tag[4] != "X":
+        # number
+        match tag[3]:
+            case "S":
+                number = "SG"
+            case "P" | "D":
+                number = "PL"
+            case _:
+                number = _get_default_gram_cat("number")
+
+        # case
+        if tag[4].isnumeric():
             case = tag[4]
         else:
             case = _get_default_gram_cat("case")
 
-        if tag.startswith("NNM"):
-            gender = "MA"
-        elif tag.startswith("NNI"):
-            gender = "MI"
-        elif tag[2] in ("I", "Y"):
-            gender = "M"
-        # FIXME: feminines etc.!
-        elif tag[2] != "-":
-            gender = _get_default_gram_cat("gender")
-
+    # comparison degree for adjectives and adverbs
     if tag[0] in ("A", "D"):
-        if tag[9] == "2":  # comparative
-            comp_deg = "CP"
-        if tag[9] == "3":  # superlative
-            comp_deg = "SP"
+        match tag[9]:
+            case "2":  # comparative
+                comp_deg = "CP"
+            case "3":  # superlative
+                comp_deg = "SP"
 
     # special cases
     if lemma == "co":
         gender = "N"
+    if lemma == "kdo":
+        gender = "M"
 
     if lemma in ("kdo", "co", "se"):
         number = "SG"
