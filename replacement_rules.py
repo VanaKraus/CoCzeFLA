@@ -4,11 +4,11 @@ import word_definitions as words
 # list: tuple: (pattern, replacement)
 CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # remove participant roles from the start of lines
-    (r"\*(CHI|MOT|FAT|GRA|SIS|SIT|BRO|ADU):\t", ""),
-    # remove "<xyz>" followed by "[/]", "[//]" or e.g. "[=! básnička]"
+    (r"\*[A-Z]{3}:\t", ""),
+    # remove "<xyz>" followed by "[/]", "[//]", "[=! básnička]", "[=! zpěv]" or [?]
     # e.g. [básnička = poem]: *CHI:	<máme_tady_xxx_a_pěkný_bububínek_je_tam_jedno_kůzlátko_a_už_nevylezlo> [=! básnička].
     (
-        r"<[ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+> \[(\/{1,2}|=! (básnička|zpěv))\]",
+        r"<[ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+> \[(\/{1,2}|=! (básnička|zpěv)|\?)\]",
         "",
     ),
     # renove all material between "&=" and a space, including cases such as "&=imit:xxx"
@@ -17,7 +17,8 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
         r"&=[a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ:]+",
         "",
     ),
-    # remove all material between "0" or "&" and first non-letter character, e.g. "*MOT:	toho &vybavová vybarvování."
+    # remove all material between "0" or "&" and first non-letter character
+    # e.g. "*MOT:	toho &vybavová vybarvování."; "*CHI:	koupu 0se 0ve vodě ."
     (
         r"[0&][a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+",
         "",
@@ -42,15 +43,12 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     (r"xxx", r""),
     # remove "+<" from the beginning of lines
     (r"\+<", ""),
-    # remove all the remaining "<"s, "*"s, "[?]"s, e.g. "*CHI: chci  <žlutou> [?] kytku."
-    (r"<|>", r""),
-    (r"\[[\?]\]", r""),
     # remove quote marks
-    (r'"|“|”', r""),
+    (r"“|”", r""),
     # placeholders are strings not overlapping with any existing Czech words
     # token ending in @i, @z:ip, @z:ia, @z:in = to be marked as an interjection
     (r"@i|@z:ip|@z:ia|@z:in", constants.PLACEHOLDER_INTERJECTION),
-    # token ending in @c, @n = tag is to be marked as a neolgoism
+    # token ending in @c, @n = tag is to be marked as neologism
     (r"@c|@n", constants.PLACEHOLDER_NEOLOGISM),
     # token ending in @z:f = tag is to be marked as foreign
     (r"@z:f", constants.PLACEHOLDER_FOREIGN),
@@ -78,7 +76,6 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
 MOR_WORDS_OVERRIDES: dict[str, str] = {
     # lexically specified "exceptions": "mami" always to be tagged as "n|máma-5&SG&F" etc.
     "mami": "n|máma-5&SG&F",
-    "no": "part|no",
     "koukej": "v|koukat-2&SG&imp&akt&impf",
     "zzz": "x|zzz",
     # forms of "rád" to be tagged as follows
@@ -95,13 +92,13 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     # double lemmatization for forms of "aby.*" and "kdyby.*" + "ses", "sis", and "zač"
     "abych": "conj:sub_v:aux|aby_být-1&SG&cond&akt&impf",
     "abys": "conj:sub_v:aux|aby_být-2&SG&cond&akt&impf",
-    "aby": "conj:sub_v:aux|aby_být-1&x_cislo&cond&akt&impf",
+    "aby": "conj:sub_v:aux|aby_být-3&x_cislo&cond&akt&impf",
     "abychom": "conj:sub_v:aux|aby_být-1&PL&cond&akt&impf",
     "abyste": "conj:sub_v:aux|aby_být-2&PL&cond&akt&impf",
     "abysme": "conj:sub_v:aux|aby_být-1&PL&cond&akt&impf",
     "kdybych": "conj:sub_v:aux|kdyby_být-1&SG&cond&akt&impf",
     "kdybys": "conj:sub_v:aux|kdyby_být-2&SG&cond&akt&impf",
-    "kdyby": "conj:sub_v:aux|kdyby_být-1&x_cislo&cond&akt&impf",
+    "kdyby": "conj:sub_v:aux|kdyby_být-3&x_cislo&cond&akt&impf",
     "kdybychom": "conj:sub_v:aux|kdyby_být-1&PL&cond&akt&impf",
     "kdybysme": "conj:sub_v:aux|kdyby_být-1&PL&cond&akt&impf",
     "kdybyste": "conj:sub_v:aux|kdyby_být-2&PL&cond&akt&impf",
@@ -109,8 +106,6 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     "sis": "pro:refl_v:aux|se_být-3&SG_2&SG&ind&pres&akt&impf",
     "zač": "prep_pro:int|za_co-4&SG&N",
     #  to be tagged as interjections
-    "hm": "int|hm",
-    "mhm": "int|mhm",
     "emem": "int|emem",
 }
 

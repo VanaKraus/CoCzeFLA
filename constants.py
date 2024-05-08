@@ -13,10 +13,9 @@ PLACEHOLDER_FOREIGN: str = "bacashoogaciz"
 
 # token flags
 class tflag(Enum):
-    tag_extension = 1
-    interjection = 2
-    neologism = 3
-    foreign = 4
+    interjection = 1
+    neologism = 2
+    foreign = 3
 
 
 # default values for empty grammatical categories
@@ -24,7 +23,9 @@ EMPTY_GRAM_CAT_DEFAULT: dict[str, str] = {
     "case": "x_pad",
     "person": "x_osoba",
     "number": "x_cislo",
+    "mood": "x_zpusob",
+    "tense": "x_cas",
     "voice": "x_slovesny_rod",
-    "gender": "x_jmenny_rod",
     "aspect": "x_vid",
+    "gender": "x_jmenny_rod",
 }
