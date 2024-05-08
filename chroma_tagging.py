@@ -329,76 +329,118 @@ def transform_tag(token: Token) -> str:
 
     # verbs
     if tag[0] == "V":
-        # TODO: make category conversions from MorphoDiTa's tags clearer (less nested)
-
-        # aspect
-        if lemma in words.IMPERFECTIVE_VERBS:
-            aspect = "impf"
-        elif lemma in words.PERFECTIVE_VERBS:
-            aspect = "pf"
-        else:
-            aspect = _get_default_gram_cat("aspect")
-
         # gender
-        if tag[2] in ("I", "M", "Y"):
-            gender = "M"
-        elif tag[2] == "N":
-            gender = "N"
-        elif tag[2] == "F":
-            gender = "F"
-        elif tag[2] != "-":
-            gender = _get_default_gram_cat("gender")
+        match tag[2]:
+            case "I" | "M" | "Y":
+                gender = "M"
+            case "F":
+                gender = "F"
+            case "N":
+                gender = "N"
+            case "-":
+                pass
+            case _:  # cases when MorphoDiTa wasn't sure
+                gender = _get_default_gram_cat("gender")
 
         # number
-        if tag[3] == "S":
-            number = "SG"
-        elif tag[3] == "P":
-            number = "PL"
-        # else: the value "–": infinitive, auxiliary "být" in the conditional form
+        match tag[3]:
+            case "S":
+                number = "SG"
+            case "P":
+                number = "PL"
 
-        # passive
-        if tag[11] == "P":
-            voice = "pas"
-        # active
-        elif tag[11] == "A":
-            voice = "akt"
+            # else: the value "–": infinitive, auxiliary "být" in the conditional form
+            # "D" (dual), "W" (sg. for f., pl. for n.) and "X" (any) values also omitted
 
+        # person
+        if tag[7] in ("1", "2", "3"):
+            person = tag[7]
+
+        # tense
+        match tag[8]:
+            case "F":
+                tense = "futur"
+            case "P":
+                tense = "pres"
+            case "R":
+                tense = "past"
+
+        # voice
+        match tag[11]:
+            case "A":
+                voice = "akt"
+            case "P":
+                voice = "pas"
+
+        # aspect
+        match tag[12]:
+            case "P":
+                aspect = "pf"
+            case "I":
+                aspect = "impf"
+            case "B":
+                aspect = "biasp"
+            case _:
+                aspect = _get_default_gram_cat("aspect")
+
+        # form types specifics
         match tag[1]:
             # infinitive
             case "f":
                 form_type = "inf"
 
-            # past participle
-            case "p":
-                tense = "past"
-
+            # past participle ("q" denotes its archaic form)
+            case "p" | "q":
                 if number is None:
                     number = _get_default_gram_cat("number")
+
+                if voice is None:
+                    voice = _get_default_gram_cat("voice")
 
             # passive participle
             case "s":
                 if number is None:
                     number = _get_default_gram_cat("number")
 
-            # TODO: implement transgressives?
-            # if it's neither an infinitive nor a participle
-            case _:
-                if tag[7] in ("1", "2", "3"):
-                    person = tag[7]
+                if voice is None:
+                    voice = _get_default_gram_cat("voice")
 
-                if tag.startswith("Vc"):
-                    mood = "cond"
-                elif tag.startswith("Vi"):
-                    mood = "imp"
-                elif tag.startswith("VB"):
-                    mood = "ind"
-                    if tag[8] == "P":
-                        tense = "pres"
-                    elif tag[8] == "F":
-                        tense = "futur"
+            # conditional
+            case "c":
+                mood = "cond"
 
                 if number is None:
                     number = _get_default_gram_cat("number")
+
+                if person is None:
+                    person = _get_default_gram_cat("person")
+
+            # imperative
+            case "i":
+                mood = "imp"
+
+                # passive imperatives expressed by an imperative aux and past participle
+                voice = "akt"
+
+                if number is None:
+                    number = _get_default_gram_cat("number")
+
+            # indicative ("t" denotes its archaic form)
+            case "B" | "t":
+                mood = "ind"
+
+                if number is None:
+                    number = _get_default_gram_cat("number")
+
+                if voice is None:
+                    voice = _get_default_gram_cat("voice")
+
+            # transgressives (both present and past)
+            case "e" | "m":
+                form_type = "trans"
+
+                # passive transgressives are expressed by a transgressive aux and past participle
+                voice = "akt"
 
     # nouns, adjectives, pronouns, numerals and not multiplicative numerals
     elif tag[0] in ("N", "A", "P", "C") and not tag.startswith("Cv"):
@@ -420,6 +462,7 @@ def transform_tag(token: Token) -> str:
             gender = "MI"
         elif tag[2] in ("I", "Y"):
             gender = "M"
+        # FIXME: feminines etc.!
         elif tag[2] != "-":
             gender = _get_default_gram_cat("gender")
 
