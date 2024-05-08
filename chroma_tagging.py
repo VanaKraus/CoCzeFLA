@@ -285,6 +285,10 @@ def pos_mor(token: Token) -> str:
         case _:
             result = "x"
 
+    # special cases
+    if lemma in ("tak", "proto") and result == "adv":
+        result = "adv:pro"
+
     return result
 
 
