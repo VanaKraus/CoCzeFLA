@@ -770,7 +770,7 @@ def _handle_args(args):
             except ChatToPlainTextConversionError as e:
                 _ecode = 1
                 print(
-                    f"Error\t: {input_file} ({e.__class__.__name__})\n{e}",
+                    f"Error\t: {input_file} ({e.__class__.__name__})\n{e}\n",
                     file=sys.stderr,
                 )
     else:
