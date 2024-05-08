@@ -8,7 +8,7 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # remove "<xyz>" followed by "[/]", "[//]", "[=! básnička]", "[=! zpěv]" or [?]
     # e.g. [básnička = poem]: *CHI:	<máme_tady_xxx_a_pěkný_bububínek_je_tam_jedno_kůzlátko_a_už_nevylezlo> [=! básnička].
     (
-        r"<[ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+> \[(\/{1,2}|=! (básnička|zpěv)|\?)\]",
+        r"<[ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*> \[(\/{1,2}|=! (básnička|zpěv)|\?|)\]",
         "",
     ),
     # renove all material between "&=" and a space, including cases such as "&=imit:xxx"
@@ -25,7 +25,7 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     ),
     # remove repetition marking, e.g. [x 2]
     # an optional space after the number, because there was a line with "[x 4 ] ." at which the script broke down
-    (r"\[x [0-9]+ ?\]", ""),
+    (r"<([ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*)> \[x [0-9]+ ?\]", r"\1"),
     # "přišels [:přišel jsi]" is to be analyzed as "přišel jsi"
     (
         r"[a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+ \[:([ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)\]",
@@ -58,10 +58,14 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # Nee > ne
     (r"[Nn]ee", r"ne"),
     # add space before punctuation
-    (r"([\?!\.,])", r" \1"),
+    # (r" *(,|“|”|;) *", r" \1 "),
+    # (r" *(\.|\?|\!|\+\.\.\.|\+/\.)$", r" \1"),
+    # #orig
+    # (r"([\?!\.,])", r" \1"),
     # remove excessive whitespaces from multi-character symbols
     (r"\+ \. \. \.", r"+..."),
     (r"\+\/ \.", r"+/."),
+    (r" \[= ! ", r" [=! "),
     # remove excessive whitespaces and turn them into regular spaces
     (r"\s{1,}", r" "),
     # remove commas that are not separating anything
@@ -71,6 +75,11 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     (r"^\s+", r""),
     (r"\s+$", r""),
 ]
+
+# when a string matches this pattern, we count it as plaintext
+PLAIN_TEXT_CRITERIA: str = (
+    r"^[ ,0a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*(\.|\?|\!|\+\.\.\.|\+\/\.)$"
+)
 
 # dict: {word, MOR word}
 MOR_WORDS_OVERRIDES: dict[str, str] = {

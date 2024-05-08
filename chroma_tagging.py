@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 """ 
+# TODO: module docstring
+
 the script for the morphological analysis of the longitudinal corpus of spoken Czech child-adult interactions
 
 MIT License
@@ -51,12 +53,13 @@ import sys
 import os
 from typing import Any
 
-import constants
-import replacement_rules as rules
-import word_definitions as words
-
 from corpy.morphodita import Tagger, Token, Tokenizer
 from nltk.corpus import PlaintextCorpusReader
+
+import constants
+import replacement_rules as rules
+
+_ecode: int = 0
 
 # cached taggers and tokenizers
 _taggers: dict[str, Tagger] = {}
@@ -67,7 +70,8 @@ def _get_tagger(path: str | None = None) -> Tagger:
     """Get tagger instance and cache it.
 
     Args:
-        path (str | None, optional): Path to MorfFlex .tagger file. When path == None, constants.TAGGER_PATH is used. Defaults to None.
+        path (str | None, optional): Path to MorfFlex .tagger file. \
+            When path == None, constants.TAGGER_PATH is used. Defaults to None.
 
     Returns:
         Tagger: Tagger instance.
@@ -90,7 +94,8 @@ def _get_tokenizer(tokenizer_type: str | None = None) -> Tokenizer:
     """Get tokenizer instance and cache it.
 
     Args:
-        tokenizer_type (str | None, optional): MorphoDiTa tokenizer type. When tokenizer_type == None, constants.TOKENIZER_TYPE is used. Defaults to None.
+        tokenizer_type (str | None, optional): MorphoDiTa tokenizer type. \
+            When tokenizer_type == None, constants.TOKENIZER_TYPE is used. Defaults to None.
 
     Returns:
         Tokenizer: Tokenizer instance.
@@ -114,7 +119,8 @@ def tag_string(string: str, tagger: Tagger | None = None) -> list[Token]:
 
     Args:
         string (str): String to be tagged.
-        tagger (Tagger | None, optional): Tagger to tag the string with. When tagger == None, _get_tagger() is used. Defaults to None.
+        tagger (Tagger | None, optional): Tagger to tag the string with. \
+            When tagger == None, _get_tagger() is used. Defaults to None.
 
     Returns:
         list[Token]
@@ -131,7 +137,8 @@ def tokenize_string(string: str, tokenizer: Tokenizer | None = None) -> list[str
 
     Args:
         string (str): String to be tokenized.
-        tokenizer (Tokenizer | None, optional): Tokenizer to tokenize the string with. When tokenizer == None, _get_tokenizer() is used. Defaults to None.
+        tokenizer (Tokenizer | None, optional): Tokenizer to tokenize the string with. \
+            When tokenizer == None, _get_tokenizer() is used. Defaults to None.
 
     Returns:
         list[str]: _description_
@@ -142,11 +149,29 @@ def tokenize_string(string: str, tokenizer: Tokenizer | None = None) -> list[str
     return list(tokenizer.tokenize(string))
 
 
+class ChatToPlainTextConversionError(Exception):
+    """CHAT line that cannot be converted to plaintext."""
+
+    def __init__(self, chat_line: str, result: str, *args: object) -> None:
+        self.chat_line = chat_line
+        self.result = result
+
+        super().__init__(
+            f"Failed to convert chat_line: chat_line likely isn't valid\
+                \n\n{chat_line = }\n{result = }",
+            *args,
+        )
+
+
 def chat_to_plain_text(chat_line: str) -> str | None:
     """Transform a line in CHAT format to plain text.
 
     Args:
         chat_line (str): Line in CHAT format.
+
+    Raises:
+        ChatToPlainTextConversionError: When chat_line cannot be converted to plaintext. \
+        This means that the line is likely invalid.
 
     Returns:
         str | None: Line in plain text. Return None when the line is a comment or annotation.
@@ -156,11 +181,31 @@ def chat_to_plain_text(chat_line: str) -> str | None:
 
     result = chat_line
 
-    for rule in rules.CHAT_TO_PLAIN_TEXT:
-        if result == "":
-            break
+    # loops runs for the first time, result has changed in the last iteration
+    first_iteration, needs_review = True, True
 
-        result = re.sub(rule[0], rule[1], result)
+    # while the loops runs for the first time
+    # or result isn't empty and doesn't match plaintext criteria
+    while first_iteration or (
+        result and not re.search(rules.PLAIN_TEXT_CRITERIA, result)
+    ):
+        # result hasn't changed in the last iteration
+        # yet it stil doesn't match the criteria
+        if not needs_review:
+            raise ChatToPlainTextConversionError(chat_line, result)
+
+        result_intermediate = result
+        for rule in rules.CHAT_TO_PLAIN_TEXT:
+            if result_intermediate == "":
+                result = result_intermediate
+                break
+
+            result_intermediate = re.sub(rule[0], rule[1], result_intermediate)
+
+        needs_review = result_intermediate != result
+        result = result_intermediate
+
+        first_iteration = False
 
     return result
 
@@ -314,7 +359,7 @@ def transform_tag(token: Token) -> str:
         str: %mor tag.
     """
 
-    tag, word, lemma = token.tag, token.word, token.lemma
+    tag, _, lemma = token.tag, token.word, token.lemma
 
     # delimiters for grammatical categories and for lexical categories
     gr_delim, lex_delim = "&", "-"
@@ -551,7 +596,8 @@ def construct_mor_word(token: Token, flags: dict[constants.tflag, Any] = None) -
 
     lemma = token.lemma
 
-    # plural central pronouns to be lemmatized as e.g. "my" or "náš" rather than forms of "já" or "můj"
+    # plural central pronouns to be lemmatized
+    # as e.g. "my" or "náš" rather than forms of "já" or "můj"
     if token.word in rules.MOR_WORDS_LEMMA_OVERRIDES:
         lemma = rules.MOR_WORDS_LEMMA_OVERRIDES[token.word]
 
@@ -568,9 +614,13 @@ def mor_line(
     """Create a %mor line from an input text.
 
     Args:
-        text (str): Plain line (stripped of the speaker ID and other annotation). Words with special annotation are expected to use their appropriate placeholders (`constants.PLACEHOLDER_*`).
-        tokenizer (Tokenizer | None, optional): MorphoDiTa tokenizer to use. When tokenizer == None, _get_tokenizer() is used. Defaults to None.
-        tagger (Tagger | None, optional): MorphoDiTa tagger to use. When tagger == None, _get_tagger() is used. Defaults to None.
+        text (str): Plain line (stripped of the speaker ID and other annotation). \
+            Words with special annotation are expected to use their appropriate \
+            placeholders (`constants.PLACEHOLDER_*`).
+        tokenizer (Tokenizer | None, optional): MorphoDiTa tokenizer to use. \
+            When tokenizer == None, _get_tokenizer() is used. Defaults to None.
+        tagger (Tagger | None, optional): MorphoDiTa tagger to use. \
+            When tagger == None, _get_tagger() is used. Defaults to None.
 
     Returns:
         str: %mor line.
@@ -621,7 +671,8 @@ def annotate_filestream(
     Args:
         source_fs: Source filestream.
         target_fs: Target filestream.
-        tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. Defaults to _get_tokenizer().
+        tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. \
+            Defaults to _get_tokenizer().
         tagger (Tagger, optional): MorphoDiTa tagger to use. Defaults to _get_tagger().
     """
     if not tokenizer:
@@ -651,8 +702,10 @@ def annotate_file(
     Args:
         path_source (str): Path to the source file.
         path_target (str): Path to the target file. Existing files will be overwritten.
-        tokenizer (Tokenizer | None, optional): MorphoDiTa tokenizer to use. When tokenizer == None, _get_tokenizer() is used. Defaults to None.
-        tagger (Tagger | None, optional): MorphoDiTa tagger to use. When tagger == None, _get_tagger() is used. Defaults to None.
+        tokenizer (Tokenizer | None, optional): MorphoDiTa tokenizer to use. \
+            When tokenizer == None, _get_tokenizer() is used. Defaults to None.
+        tagger (Tagger | None, optional): MorphoDiTa tagger to use. \
+            When tagger == None, _get_tagger() is used. Defaults to None.
     """
 
     if not tokenizer:
@@ -672,6 +725,8 @@ def annotate_file(
 
 
 def _handle_args(args):
+    global _ecode
+
     if args.tagger:
         constants.TAGGER_PATH = args.tagger[0]
 
@@ -709,7 +764,15 @@ def _handle_args(args):
         for input_file, output_file in files:
             if not os.path.isdir(dname := os.path.dirname(output_file)):
                 os.makedirs(dname)
-            annotate_file(input_file, output_file)
+
+            try:
+                annotate_file(input_file, output_file)
+            except ChatToPlainTextConversionError as e:
+                _ecode = 1
+                print(
+                    f"Error\t: {input_file} ({e.__class__.__name__})\n{e}",
+                    file=sys.stderr,
+                )
     else:
         print(
             "An output directory needs to be specified. See --help for more.",
@@ -719,7 +782,8 @@ def _handle_args(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Add morphological annotation to a CHAT text file according to the CoCzeFLA standards."
+        description="Add morphological annotation to a CHAT text file \
+            according to the CoCzeFLA standards."
     )
     parser.add_argument(
         "-s",
@@ -739,14 +803,16 @@ if __name__ == "__main__":
         "--indir",
         nargs=1,
         type=str,
-        help="take all .txt files from this directory as the input; enabling this option overrides all inputfiles",
+        help="take all .txt files from this directory as the input; \
+            enabling this option overrides all inputfiles",
     )
     parser.add_argument(
         "-d",
         "--tokenizer",
         nargs=1,
         type=str,
-        help="configure MorphoDiTa tokenizer type; overrides any tokenizer type specified in constants.TOKENIZER_TYPE",
+        help="configure MorphoDiTa tokenizer type; overrides any tokenizer type \
+            specified in constants.TOKENIZER_TYPE",
     )
     parser.add_argument(
         "-t",
@@ -759,3 +825,5 @@ if __name__ == "__main__":
 
     arguments = parser.parse_args(sys.argv[1:])
     _handle_args(arguments)
+
+    exit(_ecode)
