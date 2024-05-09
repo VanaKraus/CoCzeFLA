@@ -124,6 +124,9 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     "emem": "int|emem",
 }
 
+# dict: {MorfFlex lemma: target lemma}
+MOR_MLEMMAS_LEMMA_OVERRIDES: dict[str, str] = {"tento": "ten", "tenhle": "ten"}
+
 # dict: {word form: target lemma}
 MOR_WORDS_LEMMA_OVERRIDES: dict[str, str] = {
     word: word_list[0]

@@ -2,6 +2,7 @@
 
 """ 
 # TODO: module docstring
+# TODO: check that docstrings are up-to-date
 
 the script for the morphological analysis of the longitudinal corpus of spoken Czech child-adult interactions
 
@@ -57,6 +58,7 @@ from corpy.morphodita import Tagger, Token, Tokenizer
 from nltk.corpus import PlaintextCorpusReader
 
 import constants
+from constants import tflag, cats
 import replacement_rules as rules
 
 _ecode: int = 0
@@ -210,7 +212,7 @@ def chat_to_plain_text(chat_line: str) -> str | None:
     return result
 
 
-def pos_mor(token: Token, flags: dict[constants.tflag, Any] = None) -> str:
+def pos_mor(token: Token, flags: dict[tflag, Any] = None) -> str:
     """Generate a %mor POS code for given token.
 
     Args:
@@ -235,8 +237,7 @@ def pos_mor(token: Token, flags: dict[constants.tflag, Any] = None) -> str:
         case "N":
             result = "n"
             if (
-                not constants.tflag.quotation_beginning in flags
-                and word == word.capitalize()
+                not tflag.quotation_beginning in flags and word == word.capitalize()
             ):  # proper noun
                 result = "n:prop"
 
@@ -342,7 +343,7 @@ def pos_mor(token: Token, flags: dict[constants.tflag, Any] = None) -> str:
     return result
 
 
-def _get_default_gram_cat(category: str) -> str:
+def _get_default_cat(category: cats) -> str:
     """Get default value for a grammatical category. Use when the category value is unclear.
 
     Args:
@@ -352,6 +353,18 @@ def _get_default_gram_cat(category: str) -> str:
         str: Category value.
     """
     return constants.EMPTY_GRAM_CAT_DEFAULT[category]
+
+
+def _require_cats(
+    categories: dict[cats, str], *requirements: list[cats]
+) -> dict[str, str]:
+    result = dict(categories)
+
+    for req in requirements:
+        if not req in result:
+            result[req] = _get_default_cat(req)
+
+    return result
 
 
 def transform_tag(token: Token) -> str:
@@ -370,131 +383,143 @@ def transform_tag(token: Token) -> str:
     gr_delim, lex_delim = "&", "-"
 
     # lexical categories
-    neg, comp_deg = None, None
+    lxcats: dict[str, str] = {}
 
     # grammatical categories
-    form_type, case, person, number, mood, tense, voice, gender, aspect = (
-        None for _ in range(9)
-    )
+    grcats: dict[str, str] = {}
 
     # negation
     if tag[10] == "N":
-        neg = "neg"
+        lxcats[cats.negation] = "neg"
 
     # verbs
     if tag[0] == "V":
         # gender
         match tag[2]:
             case "I" | "M" | "Y":
-                gender = "M"
+                grcats[cats.gender] = "M"
             case "F":
-                gender = "F"
+                grcats[cats.gender] = "F"
             case "N":
-                gender = "N"
-            case "-":
-                pass
-            case _:  # cases when MorphoDiTa wasn't sure
-                gender = _get_default_gram_cat("gender")
+                grcats[cats.gender] = "N"
 
         # number
         match tag[3]:
             case "S":
-                number = "SG"
+                grcats[cats.number] = "SG"
             case "P":
-                number = "PL"
+                grcats[cats.number] = "PL"
 
             # else: the value "–": infinitive, auxiliary "být" in the conditional form
             # "D" (dual), "W" (sg. for f., pl. for n.) and "X" (any) values also omitted
 
         # person
         if tag[7] in ("1", "2", "3"):
-            person = tag[7]
+            grcats[cats.person] = tag[7]
 
         # tense
         match tag[8]:
             case "F":
-                tense = "futur"
+                grcats[cats.tense] = "futur"
             case "P":
-                tense = "pres"
+                grcats[cats.tense] = "pres"
             case "R":
-                tense = "past"
+                grcats[cats.tense] = "past"
 
         # voice
         match tag[11]:
             case "A":
-                voice = "akt"
+                grcats[cats.voice] = "akt"
             case "P":
-                voice = "pas"
+                grcats[cats.voice] = "pas"
 
         # aspect
         match tag[12]:
             case "P":
-                aspect = "pf"
+                grcats[cats.aspect] = "pf"
             case "I":
-                aspect = "impf"
+                grcats[cats.aspect] = "impf"
             case "B":
-                aspect = "biasp"
-            case _:
-                aspect = _get_default_gram_cat("aspect")
+                grcats[cats.aspect] = "biasp"
 
         # form types specifics
         match tag[1]:
             # infinitive
             case "f":
-                form_type = "inf"
+                grcats[cats.form_type] = "inf"
+
+                grcats = _require_cats(grcats, cats.form_type, cats.aspect)
 
             # past participle ("q" denotes its archaic form)
             case "p" | "q":
-                if number is None:
-                    number = _get_default_gram_cat("number")
-
-                if voice is None:
-                    voice = _get_default_gram_cat("voice")
+                grcats = _require_cats(
+                    grcats,
+                    cats.number,
+                    cats.tense,
+                    cats.voice,
+                    cats.gender,
+                    cats.aspect,
+                )
 
             # passive participle
             case "s":
-                if number is None:
-                    number = _get_default_gram_cat("number")
-
-                if voice is None:
-                    voice = _get_default_gram_cat("voice")
+                grcats = _require_cats(
+                    grcats, cats.number, cats.voice, cats.gender, cats.aspect
+                )
 
             # conditional
             case "c":
-                mood = "cond"
+                grcats[cats.mood] = "cond"
 
-                if number is None:
-                    number = _get_default_gram_cat("number")
-
-                if person is None:
-                    person = _get_default_gram_cat("person")
+                grcats = _require_cats(
+                    grcats, cats.person, cats.number, cats.mood, cats.voice, cats.aspect
+                )
 
             # imperative
             case "i":
-                mood = "imp"
+                grcats[cats.mood] = "imp"
 
                 # passive imperatives expressed by an imperative aux and past participle
-                voice = "akt"
+                grcats[cats.voice] = "akt"
 
-                if number is None:
-                    number = _get_default_gram_cat("number")
+                grcats = _require_cats(
+                    grcats,
+                    cats.person,
+                    cats.number,
+                    cats.mood,
+                    cats.voice,
+                    cats.aspect,
+                )
 
             # indicative ("t" denotes its archaic form)
             case "B" | "t":
-                mood = "ind"
+                grcats[cats.mood] = "ind"
 
-                if number is None:
-                    number = _get_default_gram_cat("number")
-
-                if voice is None:
-                    voice = _get_default_gram_cat("voice")
+                grcats = _require_cats(
+                    grcats,
+                    cats.person,
+                    cats.number,
+                    cats.mood,
+                    cats.tense,
+                    cats.voice,
+                    cats.aspect,
+                )
 
             # transgressives (both present and past)
             case "e" | "m":
-                form_type = "trans"
+                grcats[cats.form_type] = "trans"
 
                 # passive transgressives are expressed by a transgressive aux and past participle
-                voice = "akt"
+                grcats[cats.voice] = "akt"
+
+                grcats = _require_cats(
+                    grcats,
+                    cats.form_type,
+                    cats.number,
+                    cats.voice,
+                    cats.gender,
+                    cats.aspect,
+                )
 
     # nouns, adjectives, pronouns, numerals and not multiplicative numerals
     elif tag[0] in ("N", "A", "P", "C") and not tag.startswith("Cv"):
@@ -502,80 +527,71 @@ def transform_tag(token: Token) -> str:
         match tag[2]:
             # discriminate animate and inanimate masculines for nouns only
             case "M":
-                gender = "MA" if tag[0] == "N" else "M"
+                grcats[cats.gender] = "MA" if tag[0] == "N" else "M"
             case "I":
-                gender = "MI" if tag[0] == "N" else "M"
+                grcats[cats.gender] = "MI" if tag[0] == "N" else "M"
             case "Y":
-                gender = "M"
+                grcats[cats.gender] = "M"
             case "F":
-                gender = "F"
+                grcats[cats.gender] = "F"
             case "N":
-                gender = "N"
-            case "-":
-                pass
-            case _:  # cases when MorphoDiTa wasn't sure
-                gender = _get_default_gram_cat("gender")
+                grcats[cats.gender] = "N"
 
         # number
         match tag[3]:
             case "S":
-                number = "SG"
+                grcats[cats.number] = "SG"
             case "P" | "D":
-                number = "PL"
-            case _:
-                number = _get_default_gram_cat("number")
+                grcats[cats.number] = "PL"
 
         # case
         if tag[4].isnumeric():
-            case = tag[4]
-        else:
-            case = _get_default_gram_cat("case")
+            grcats[cats.case] = tag[4]
+
+        grcats = _require_cats(grcats, cats.gender, cats.number, cats.case)
 
     # comparison degree for adjectives and adverbs
     if tag[0] in ("A", "D"):
         match tag[9]:
             case "2":  # comparative
-                comp_deg = "CP"
+                lxcats[cats.comp_deg] = "CP"
             case "3":  # superlative
-                comp_deg = "SP"
+                lxcats[cats.comp_deg] = "SP"
 
     # special cases
     if lemma == "co":
-        gender = "N"
+        grcats[cats.gender] = "N"
     if lemma == "kdo":
-        gender = "M"
+        grcats[cats.gender] = "M"
 
     if lemma in ("kdo", "co", "se"):
-        number = "SG"
+        grcats[cats.number] = "SG"
+
+    if lemma in ("já", "my", "ty", "vy"):
+        del grcats[cats.gender]
 
     # build strings
-    gram_categories = (
-        form_type,
-        case,
-        person,
-        number,
-        mood,
-        tense,
-        voice,
-        gender,
-        aspect,
-    )
 
     # join non-empty grammatical categories into one string
-    gr_joined = gr_delim.join([el for el in gram_categories if el])
-
-    lex_categories = (comp_deg, neg, gr_joined)
+    gr_joined = gr_delim.join(
+        [grcats[cat] for cat in constants.GRAMMATICAL_CATEGORY_ORDER if cat in grcats]
+    )
 
     # join non-empty lexical categories into one string
-    return lex_delim.join([el for el in lex_categories if el])
+    lex_join = lex_delim.join(
+        [lxcats[cat] for cat in constants.LEXICAL_CATEGORY_ORDER if cat in lxcats]
+        + [gr_joined]
+    )
+
+    return lex_join
 
 
-def construct_mor_word(token: Token, flags: dict[constants.tflag, Any] = None) -> str:
+def construct_mor_word(token: Token, flags: dict[tflag, Any] = None) -> str:
     """Create an entire %mor morphological annotation for the given token.
 
     Args:
         token (Token): MorphoDiTa token.
-        flags (dict[constants.tflag, Any], optional): Token flags of `token`. Defaults to None.
+        flags (dict[tflag, Any], optional): Token flags of `token`. Defaults to None.
 
     Returns:
         str
@@ -585,13 +601,13 @@ def construct_mor_word(token: Token, flags: dict[constants.tflag, Any] = None) -
     if pos_label == "Z":
         return token.lemma
 
-    if constants.tflag.interjection in flags:
+    if tflag.interjection in flags:
         return f"int|{token.lemma}"
 
-    if constants.tflag.neologism in flags:
+    if tflag.neologism in flags:
         return f"x|{token.word}-neo"
 
-    if constants.tflag.foreign in flags:
+    if tflag.foreign in flags:
         return f"x|{token.word}-for"
 
     if token.word in rules.MOR_WORDS_OVERRIDES:
@@ -601,13 +617,16 @@ def construct_mor_word(token: Token, flags: dict[constants.tflag, Any] = None) -
 
     lemma = token.lemma
 
-    # plural central pronouns to be lemmatized
-    # as e.g. "my" or "náš" rather than forms of "já" or "můj"
+    # some MorfFlex lemmas to be replaced by ours
+    if token.lemma in rules.MOR_MLEMMAS_LEMMA_OVERRIDES:
+        lemma = rules.MOR_MLEMMAS_LEMMA_OVERRIDES[token.lemma]
+
+    # some words have their lemmas hardcoded
     if token.word in rules.MOR_WORDS_LEMMA_OVERRIDES:
         lemma = rules.MOR_WORDS_LEMMA_OVERRIDES[token.word]
 
     # neologisms not to be lemmatized
-    elif constants.tflag.neologism in flags:
+    elif tflag.neologism in flags:
         lemma = token.word
 
     return f"{pos_label}|{lemma}{new_tag}"
@@ -635,18 +654,18 @@ def mor_line(
     if not tagger:
         tagger = _get_tagger()
 
-    flags: list[dict[constants.tflag,]] = []
+    flags: list[dict[tflag,]] = []
     for i, word in enumerate(tokens := tokenize_string(text, tokenizer)):
         flag = {}
         if word.endswith(constants.PLACEHOLDER_NEOLOGISM):
-            flag[constants.tflag.neologism] = True
+            flag[tflag.neologism] = True
         elif word.endswith(constants.PLACEHOLDER_FOREIGN):
-            flag[constants.tflag.foreign] = True
+            flag[tflag.foreign] = True
         elif word.endswith(constants.PLACEHOLDER_INTERJECTION):
-            flag[constants.tflag.interjection] = True
+            flag[tflag.interjection] = True
 
         if i > 0 and tokens[i - 1] == "“":
-            flag[constants.tflag.quotation_beginning] = True
+            flag[tflag.quotation_beginning] = True
 
         flags.append(flag)
 
