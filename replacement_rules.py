@@ -100,7 +100,7 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     "bychom": "v:aux|být-1&PL&cond&akt&impf",
     "bysme": "v:aux|být-1&PL&cond&akt&impf",
     "byste": "v:aux|být-2&PL&cond&akt&impf",
-    # double lemmatization for forms of "aby.*" and "kdyby.*" + "ses", "sis", and "zač"
+    # double lemmatization for forms of "aby.*" and "kdyby.*"
     "abych": "conj:sub_v:aux|aby_být-1&SG&cond&akt&impf",
     "abys": "conj:sub_v:aux|aby_být-2&SG&cond&akt&impf",
     "aby": "conj:sub_v:aux|aby_být-3&x_cislo&cond&akt&impf",
@@ -113,10 +113,14 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     "kdybychom": "conj:sub_v:aux|kdyby_být-1&PL&cond&akt&impf",
     "kdybysme": "conj:sub_v:aux|kdyby_být-1&PL&cond&akt&impf",
     "kdybyste": "conj:sub_v:aux|kdyby_být-2&PL&cond&akt&impf",
+    # reflexive pronouns "se" and "si" to be tagged as follows
     "ses": "pro:refl_v:aux|se_být-4&SG_2&SG&ind&pres&akt&impf",
     "sis": "pro:refl_v:aux|se_být-3&SG_2&SG&ind&pres&akt&impf",
+    # zač/nač/oč
     "zač": "prep_pro:int|za_co-4&SG&N",
-    #  to be tagged as interjections
+    "nač": "prep_pro:int|na_co-4&SG&N",
+    "oč": "prep_pro:int|o_co-4&SG&N",
+    # to be tagged as interjections
     "emem": "int|emem",
 }
 
@@ -124,10 +128,6 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
 MOR_WORDS_LEMMA_OVERRIDES: dict[str, str] = {
     word: word_list[0]
     for word_list in [
-        words.PERS_PRONOUN_1PL,
-        words.PERS_PRONOUN_2PL,
-        words.POSS_PRONOUN_1PL,
-        words.POSS_PRONOUN_2PL,
         words.POSS_PRONOUN_3PL,
         words.POSS_PRONOUN_M_N_3SG,
         words.POSS_PRONOUN_F_3SG,

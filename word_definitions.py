@@ -162,38 +162,6 @@ NEGATIVE_PRONOMINAL_ADVERBS = [
     "nikterak",
     "odnikud",
 ]
-PERS_PRONOUN_1PL = ["my", "nás", "nám", "námi", "náma"]
-POSS_PRONOUN_1PL = [
-    "náš",
-    "našeho",
-    "našemu",
-    "našem",
-    "naším",
-    "naše",
-    "naší",
-    "našou",
-    "naši",
-    "našich",
-    "našim",
-    "našimi",
-    "našima",
-]
-PERS_PRONOUN_2PL = ["vy", "vás", "vám", "vámi", "váma"]
-POSS_PRONOUN_2PL = [
-    "váš",
-    "vašeho",
-    "vašemu",
-    "vašem",
-    "vaším",
-    "vaše",
-    "vaší",
-    "vašou",
-    "vaši",
-    "vašich",
-    "vašim",
-    "vašimi",
-    "vašima",
-]
 POSS_PRONOUN_F_3SG = ["její", "jejího", "jejímu", "jejím", "jejích", "jejími", "jejíma"]
 POSS_PRONOUN_M_N_3SG = ["jeho"]
 POSS_PRONOUN_3PL = ["jejich"]
