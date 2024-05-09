@@ -16,6 +16,7 @@ class tflag(Enum):
     interjection = 1
     neologism = 2
     foreign = 3
+    quotation_beginning = 4
 
 
 # default values for empty grammatical categories

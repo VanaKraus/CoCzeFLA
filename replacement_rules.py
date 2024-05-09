@@ -57,11 +57,6 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # the function mor_line() will later re-tag these appropriately
     # Nee > ne
     (r"[Nn]ee", r"ne"),
-    # add space before punctuation
-    # (r" *(,|“|”|;) *", r" \1 "),
-    # (r" *(\.|\?|\!|\+\.\.\.|\+/\.)$", r" \1"),
-    # #orig
-    # (r"([\?!\.,])", r" \1"),
     # remove excessive whitespaces from multi-character symbols
     (r"\+ \. \. \.", r"+..."),
     (r"\+\/ \.", r"+/."),

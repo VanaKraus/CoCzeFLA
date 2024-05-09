@@ -65,6 +65,8 @@ def spaces_around_punctuation(string: str) -> str:
     string = re.sub(r" *(,|“|”|;) *", r" \1 ", string).strip()
     # end-of-line characters
     string = re.sub(r" *(\.|\?|\!|\+\.\.\.|\+/\.)$", r" \1", string).strip()
+    # remove excessive whitespaces
+    string = re.sub(r" {2,}|\t+", r" ", string)
     # correct for spaces before end-of-line characters that are the only tokens on their lines
     string = re.sub(r"\t *", r"\t", string)
 

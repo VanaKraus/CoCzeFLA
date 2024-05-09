@@ -210,7 +210,7 @@ def chat_to_plain_text(chat_line: str) -> str | None:
     return result
 
 
-def pos_mor(token: Token) -> str:
+def pos_mor(token: Token, flags: dict[constants.tflag, Any] = None) -> str:
     """Generate a %mor POS code for given token.
 
     Args:
@@ -219,6 +219,8 @@ def pos_mor(token: Token) -> str:
     Returns:
         str: POS code.
     """
+    if not flags:
+        flags = {}
 
     word, lemma, tag = token.word, token.lemma, token.tag
 
@@ -232,7 +234,10 @@ def pos_mor(token: Token) -> str:
         # noun
         case "N":
             result = "n"
-            if word == word.capitalize():  # proper noun
+            if (
+                not constants.tflag.quotation_beginning in flags
+                and word == word.capitalize()
+            ):  # proper noun
                 result = "n:prop"
 
         # adjective
@@ -575,7 +580,7 @@ def construct_mor_word(token: Token, flags: dict[constants.tflag, Any] = None) -
     Returns:
         str
     """
-    pos_label = pos_mor(token)
+    pos_label = pos_mor(token, flags)
 
     if pos_label == "Z":
         return token.lemma
@@ -631,7 +636,7 @@ def mor_line(
         tagger = _get_tagger()
 
     flags: list[dict[constants.tflag,]] = []
-    for word in tokenize_string(text, tokenizer):
+    for i, word in enumerate(tokens := tokenize_string(text, tokenizer)):
         flag = {}
         if word.endswith(constants.PLACEHOLDER_NEOLOGISM):
             flag[constants.tflag.neologism] = True
@@ -639,6 +644,10 @@ def mor_line(
             flag[constants.tflag.foreign] = True
         elif word.endswith(constants.PLACEHOLDER_INTERJECTION):
             flag[constants.tflag.interjection] = True
+
+        if i > 0 and tokens[i - 1] == "“":
+            flag[constants.tflag.quotation_beginning] = True
+
         flags.append(flag)
 
     text = (
