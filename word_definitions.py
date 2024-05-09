@@ -39,7 +39,8 @@ PLURAL_INVARIABLE_NOUNS = [
     "nůžtičky",
     "plíce",
     "povidla",
-    "saně/sáně",
+    "saně",
+    "sáně",
     "sáňky",
     "spalničky",
     "spodky",
@@ -51,7 +52,14 @@ PLURAL_INVARIABLE_NOUNS = [
     "tepláky",
     "zarděnky",
 ]
-PLURAL_INVARIABLE_PROPER_NOUNS = ["Prčice"]
+PLURAL_INVARIABLE_PROPER_NOUNS = [
+    "Prčice",
+    "Velikonoce",
+    "Vánoce",
+    "Vary",
+    "Vršovice",
+    "Krkonoše",
+]
 MODAL_VERBS = ["moci", "muset", "smět"]
 PRONOMINAL_ADVERBS = [
     "dokdy",
@@ -92,7 +100,8 @@ PRONOMINAL_ADVERBS = [
     "někde",
     "někdy",
     "nyní",
-    "odevšud/odevšad",
+    "odevšud",
+    "odevšad",
     "odkdy",
     "odkdykoli",
     "odkdykoliv",
