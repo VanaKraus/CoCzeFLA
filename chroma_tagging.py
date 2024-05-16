@@ -559,15 +559,27 @@ def transform_tag(token: Token) -> str:
                 lxcats[cats.comp_deg] = "SP"
 
     # special cases
-    if lemma == "co":
+    if lemma in ("co", "něco", "nic"):
         grcats[cats.gender] = "N"
-    if lemma == "kdo":
+    if lemma in ("kdo", "někdo", "nikdo", "kdokoli", "kdokoliv", "kdosi", "kdopak"):
         grcats[cats.gender] = "M"
 
-    if lemma in ("kdo", "co", "se"):
+    if lemma in (
+        "kdo",
+        "co",
+        "něco",
+        "nic",
+        "někdo",
+        "nikdo",
+        "kdokoli",
+        "kdokoliv",
+        "kdosi",
+        "kdopak",
+        "se",
+    ):
         grcats[cats.number] = "SG"
 
-    if lemma in ("já", "my", "ty", "vy"):
+    if lemma in ("já", "my", "ty", "vy", "se"):
         del grcats[cats.gender]
 
     # build strings
