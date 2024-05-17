@@ -1,7 +1,7 @@
 from enum import Enum
 
 TAGGER_PATH: str = (
-    "_local/czech-morfflex2.0-pdtc1.0-220710/czech-morfflex2.0-pdtc1.0-220710.tagger"
+    "czech-morfflex2.0-pdtc1.0-220710/czech-morfflex2.0-pdtc1.0-220710.tagger"
 )
 
 TOKENIZER_TYPE: str = "czech"
