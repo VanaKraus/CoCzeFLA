@@ -21,6 +21,9 @@ Developed on Python 3.12 and [MorfFlex CZ 2.0 + PDT-C 1.0](https://lindat.cz/rep
 ## Example usage
 
 ```bash
+python3 chroma_tagging.py
+python3 transcription_conversion.py
+
 # directory as input with the output directory set
 python3 chroma_tagging.py -i my_directory/with_unannotated_files/ -o my_directory/with_annotated_files/
 # individual files as input with the output directory set
@@ -46,7 +49,7 @@ Below is a list of arguments that can be used when executing the scripts from th
 
 - positional arguments: list of individual input files
 - `-s`, `--std`: take input from stdin, print output to stdout
-- `-i`, `--indir`: set input directory; overrides all positional arguments
+- `-i`, `--indir`: set directory with input files; overrides all positional arguments
 - `-o`, `--outdir`: set output directory
 - `-d`, `--tokenizer`: configure MorphoDiTa tokenizer type; overrides any tokenizer type specified in `constants.TOKENIZER_TYPE` (relevant for `chroma_tagging` only)
 - `-t`, `--tagger`: configure MorphoDiTa tagger; overrides any tagger specified in `constants.TAGGER_PATH` (relevant for `chroma_tagging` only)

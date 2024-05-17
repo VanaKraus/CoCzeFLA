@@ -48,7 +48,6 @@ files with this script is thus rather slow), even though it thus this job as wel
 
 """
 
-import argparse
 import re
 import sys
 import os
@@ -57,11 +56,10 @@ from typing import Any
 from corpy.morphodita import Tagger, Token, Tokenizer
 from nltk.corpus import PlaintextCorpusReader
 
+import argument_handling as ahandling
 import constants
 from constants import tflag, cats
 import replacement_rules as rules
-
-_ecode: int = 0
 
 # cached taggers and tokenizers
 _taggers: dict[str, Tagger] = {}
@@ -237,7 +235,7 @@ def pos_mor(token: Token, flags: dict[tflag, Any] = None) -> str:
         case "N":
             result = "n"
             if (
-                not tflag.quotation_beginning in flags and word == word.capitalize()
+                tflag.quotation_beginning not in flags and word == word.capitalize()
             ):  # proper noun
                 result = "n:prop"
 
@@ -753,19 +751,14 @@ def annotate_file(
     if not tagger:
         tagger = _get_tagger()
 
-    try:
-        with open(path_source, "r", encoding="utf-8") as source_fs:
-            with open(path_target, "w", encoding="utf-8") as target_fs:
-                print(f"Annotate: {path_source}", file=sys.stderr)
-                annotate_filestream(source_fs, target_fs, tokenizer, tagger)
-    except IsADirectoryError:
-        print(f"Skip\t: {path_source} (directory)", file=sys.stderr)
-    except FileNotFoundError:
-        print(f"Skip\t: {path_source} (not found)", file=sys.stderr)
+    with open(path_source, "r", encoding="utf-8") as source_fs:
+        with open(path_target, "w", encoding="utf-8") as target_fs:
+            print(f"Annotate: {path_source}", file=sys.stderr)
+            annotate_filestream(source_fs, target_fs, tokenizer, tagger)
 
 
-def _handle_args(args):
-    global _ecode
+def _handle_args(args) -> int:
+    _ecode = 0
 
     if args.tagger:
         constants.TAGGER_PATH = args.tagger[0]
@@ -798,7 +791,7 @@ def _handle_args(args):
             print(
                 "Please specify your input files. See --help for more.", file=sys.stderr
             )
-            return
+            return 2
 
         # run file annotation
         for input_file, output_file in files:
@@ -807,6 +800,13 @@ def _handle_args(args):
 
             try:
                 annotate_file(input_file, output_file)
+
+            except IsADirectoryError:
+                _ecode = 1
+                print(f"Skip\t: {input_file} (directory)", file=sys.stderr)
+            except FileNotFoundError:
+                _ecode = 1
+                print(f"Skip\t: {input_file} (not found)", file=sys.stderr)
             except ChatToPlainTextConversionError as e:
                 _ecode = 1
                 print(
@@ -818,52 +818,26 @@ def _handle_args(args):
             "An output directory needs to be specified. See --help for more.",
             file=sys.stderr,
         )
+        return 2
+
+    return _ecode
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Add morphological annotation to a CHAT text file \
-            according to the CoCzeFLA standards."
+    req_arguments = ahandling.get_argument_subset(
+        "inputfiles", "std", "indir", "outdir", "tokenizer", "tagger"
     )
-    parser.add_argument(
-        "-s",
-        "--std",
-        action="store_true",
-        help="receive/print input/output on stdin/stdout",
-    )
-    parser.add_argument(
-        "-o",
-        "--outdir",
-        nargs=1,
-        type=str,
-        help="directory where output files should be stored",
-    )
-    parser.add_argument(
-        "-i",
-        "--indir",
-        nargs=1,
-        type=str,
-        help="take all .txt files from this directory as the input; \
-            enabling this option overrides all inputfiles",
-    )
-    parser.add_argument(
-        "-d",
-        "--tokenizer",
-        nargs=1,
-        type=str,
-        help="configure MorphoDiTa tokenizer type; overrides any tokenizer type \
-            specified in constants.TOKENIZER_TYPE",
-    )
-    parser.add_argument(
-        "-t",
-        "--tagger",
-        nargs=1,
-        type=str,
-        help="configure MorphoDiTa tagger; overrides any tagger specified in constants.TAGGER_PATH",
-    )
-    parser.add_argument("inputfiles", nargs="*", default=[])
 
-    arguments = parser.parse_args(sys.argv[1:])
-    _handle_args(arguments)
+    if len(sys.argv) > 1:
+        parser = ahandling.get_argument_parser(
+            req_arguments,
+            description="Add morphological annotation to a CHAT text file \
+                according to the CoCzeFLA standards.",
+        )
+        arguments = parser.parse_args(sys.argv[1:])
+    else:
+        arguments = ahandling.argument_walkthrough(req_arguments)
 
-    exit(_ecode)
+    ECODE = _handle_args(arguments)
+
+    sys.exit(ECODE)

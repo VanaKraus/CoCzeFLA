@@ -2,12 +2,13 @@
 
 # TODO: license
 
-import argparse
 import os
 import re
 import sys
 
 from nltk.corpus import PlaintextCorpusReader
+
+import argument_handling as ahandling
 
 PHO_LINE_PREFIX = "%pho:\t"
 
@@ -165,30 +166,17 @@ def _handle_args(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="convert CHAT text files to the v3.1 transcription standard."
+    req_arguments = ahandling.get_argument_subset(
+        "inputfiles", "std", "indir", "outdir"
     )
-    parser.add_argument(
-        "-s",
-        "--std",
-        action="store_true",
-        help="receive/print input/output on stdin/stdout",
-    )
-    parser.add_argument(
-        "-o",
-        "--outdir",
-        nargs=1,
-        type=str,
-        help="directory where output files should be stored",
-    )
-    parser.add_argument(
-        "-i",
-        "--indir",
-        nargs=1,
-        type=str,
-        help="take all .txt files from this directory as the input; enabling this option overrides all inputfiles",
-    )
-    parser.add_argument("inputfiles", nargs="*", default=[])
 
-    arguments = parser.parse_args(sys.argv[1:])
+    if len(sys.argv) > 1:
+        parser = ahandling.get_argument_parser(
+            req_arguments,
+            description="convert CHAT text files to the v3.1 transcription standard.",
+        )
+        arguments = parser.parse_args(sys.argv[1:])
+    else:
+        arguments = ahandling.argument_walkthrough(req_arguments)
+
     _handle_args(arguments)
