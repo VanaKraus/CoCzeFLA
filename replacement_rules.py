@@ -5,6 +5,17 @@ import word_definitions as words
 CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # remove participant roles from the start of lines
     (r"\*[A-Z]{3}:\t", ""),
+    # placeholders are strings not overlapping with any existing Czech words
+    # token ending in @i, @z:ip, @z:ia, @z:in = to be marked as an interjection
+    (r"@i|@z:ip|@z:ia|@z:in", constants.PLACEHOLDER_INTERJECTION),
+    # token ending in @c, @n = tag is to be marked as neologism
+    (r"@c|@n", constants.PLACEHOLDER_NEOLOGISM),
+    # token ending in @z:f = tag is to be marked as foreign
+    (r"@z:f", constants.PLACEHOLDER_FOREIGN),
+    # token ending in @z:m is to be ignored
+    (r"@z:m", r""),
+    # lengthened sounds
+    (r"([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]):", r"\1"),
     # remove "<xyz>" followed by "[/]", "[//]", "[=! básnička]", "[=! zpěv]"
     # e.g. [básnička = poem]: *CHI:	<máme_tady_xxx_a_pěkný_bububínek_je_tam_jedno_kůzlátko_a_už_nevylezlo> [=! básnička].
     (
@@ -43,17 +54,6 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     (r"\+<", ""),
     # remove quote marks
     (r"“|”", r""),
-    # placeholders are strings not overlapping with any existing Czech words
-    # token ending in @i, @z:ip, @z:ia, @z:in = to be marked as an interjection
-    (r"@i|@z:ip|@z:ia|@z:in", constants.PLACEHOLDER_INTERJECTION),
-    # token ending in @c, @n = tag is to be marked as neologism
-    (r"@c|@n", constants.PLACEHOLDER_NEOLOGISM),
-    # token ending in @z:f = tag is to be marked as foreign
-    (r"@z:f", constants.PLACEHOLDER_FOREIGN),
-    # token ending in @z:m is to be ignored
-    (r"@z:m", r""),
-    # lengthened sounds
-    (r"([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]):", r"\1"),
     # the function mor_line() will later re-tag these appropriately
     # Nee > ne
     (r"[Nn]ee", r"ne"),
