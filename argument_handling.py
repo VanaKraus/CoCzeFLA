@@ -51,6 +51,12 @@ arguments: dict[str, Argument] = {
         help="configure MorphoDiTa tagger; overrides any tagger specified in constants.TAGGER_PATH",
     ),
     "inputfiles": Argument("inputfiles", nargs="*", default=[]),
+    "fix": Argument(
+        "-f",
+        "--fix",
+        action="store_true",
+        help="fix possibly untrivial syntax errors",
+    ),
 }
 
 
@@ -74,7 +80,7 @@ def get_argument_parser(
     return parser
 
 
-def _get_yes_no_input(prompt: str) -> bool:
+def _get_boolean_input(prompt: str) -> bool:
     while True:
         res = input(f"{prompt} [y/n] ")
         if res in ("y", "Y"):
@@ -143,6 +149,12 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
         )
         if res := input(_PROMPT):
             result.tagger = [res]
+
+    # TODO: test
+    if "fix" in args:
+        result.fix = _get_boolean_input(
+            "Would you like potential syntax errors to be fixed automatically?"
+        )
 
     if result.std:
         if "tagger" in args:

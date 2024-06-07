@@ -5,6 +5,7 @@
 import os
 import re
 import sys
+from typing import Callable
 
 from nltk.corpus import PlaintextCorpusReader
 
@@ -60,6 +61,16 @@ def horizontal_ellipsis(string: str) -> str:
     return string.replace("+…", "+...")
 
 
+def fix_bracket_code_scope(string: str) -> str:
+    """Mark token preceding unmarked bracket codes as their scope. Bracket codes beginning with either '/', '=', '?', or 'x' affected."""
+
+    return re.sub(
+        r"([ \t]|^)([&,=:_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+) (\[[\/=x\?].*?\])",
+        r"\1<\2> \3",
+        string,
+    )
+
+
 def spaces_around_punctuation(string: str) -> str:
     """Add spaces around punctuation (`,`, `“`, `”`, `.`, `?`, `!`, `+...`, `+/.`)."""
     # not end-of-line characters
@@ -74,7 +85,7 @@ def spaces_around_punctuation(string: str) -> str:
     return string
 
 
-def apply_new_standard(line: str) -> str:
+def apply_new_standard(line: str, fix_errors: bool = False) -> str:
     """Convert line to the new transcription standard.
 
     Args:
@@ -92,22 +103,56 @@ def apply_new_standard(line: str) -> str:
     line = horizontal_ellipsis(line)
     line = spaces_around_punctuation(line)
 
+    if fix_errors:
+        line = fix_bracket_code_scope(line)
+
     return line
 
 
-def convert_filestream(source_fs, target_fs):
+class LineComposer:
+    def __init__(self, predicate: Callable[[str], str], target_fs) -> None:
+        self.target_fs = target_fs
+        self.predicate = predicate
+        self.line = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, exception_traceback):
+        self.complete_line()
+
+    def add(self, string: str):
+        if not self.line:
+            self.line = string.strip("\r\n")
+        # if line starts with a whitespace, it's meant to be appended to the previous one
+        elif re.match(r"\s", string):
+            self.line += re.sub(r"$\s+|\t+", " ", string.strip("\r\n"))
+        else:
+            self.complete_line()
+            self.line = string.strip("\r\n")
+
+    def complete_line(self):
+        completed = self.predicate(self.line)
+        print(completed, file=self.target_fs)
+        self.line = None
+
+
+def convert_filestream(source_fs, target_fs, fix_errors: bool = False):
     """Convert filestream.
 
     Args:
         source_fs: Source filestream.
         target_fs: Target filestream.
     """
-    for line in source_fs:
-        converted = apply_new_standard(line)
-        print(converted, file=target_fs)
+
+    predicate = lambda s: apply_new_standard(s, fix_errors)
+
+    with LineComposer(predicate, target_fs) as composer:
+        for line in source_fs:
+            composer.add(line)
 
 
-def convert_file(path_source: str, path_target: str):
+def convert_file(path_source: str, path_target: str, fix_errors: bool = False):
     """Convert single file.
 
     Args:
@@ -118,7 +163,7 @@ def convert_file(path_source: str, path_target: str):
         with open(path_source, "r", encoding="utf-8") as source_fs:
             with open(path_target, "w", encoding="utf-8") as target_fs:
                 print(f"Convert\t: {path_source}", file=sys.stderr)
-                convert_filestream(source_fs, target_fs)
+                convert_filestream(source_fs, target_fs, fix_errors)
     except IsADirectoryError:
         print(f"Skip\t: {path_source} (directory)", file=sys.stderr)
     except FileNotFoundError:
@@ -157,7 +202,7 @@ def _handle_args(args):
         for input_file, output_file in files:
             if not os.path.isdir(dname := os.path.dirname(output_file)):
                 os.makedirs(dname)
-            convert_file(input_file, output_file)
+            convert_file(input_file, output_file, args.fix)
     else:
         print(
             "An output directory needs to be specified. See --help for more.",
@@ -167,7 +212,7 @@ def _handle_args(args):
 
 if __name__ == "__main__":
     req_arguments = ahandling.get_argument_subset(
-        "inputfiles", "std", "indir", "outdir"
+        "inputfiles", "std", "indir", "outdir", "fix"
     )
 
     if len(sys.argv) > 1:

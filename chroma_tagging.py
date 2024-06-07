@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """ 
-# TODO: module docstring
+# TODO: module docstring and function docstrings
 # TODO: check that docstrings are up-to-date
 
 the script for the morphological analysis of the longitudinal corpus of spoken Czech child-adult interactions
@@ -51,7 +51,7 @@ files with this script is thus rather slow), even though it thus this job as wel
 import re
 import sys
 import os
-from typing import Any
+from typing import Any, Generator
 
 from corpy.morphodita import Tagger, Token, Tokenizer
 from nltk.corpus import PlaintextCorpusReader
@@ -176,7 +176,7 @@ def chat_to_plain_text(chat_line: str) -> str | None:
     Returns:
         str | None: Line in plain text. Return None when the line is a comment or annotation.
     """
-    if chat_line == "" or chat_line.startswith(("@", "%")):
+    if chat_line == "":
         return None
 
     result = chat_line
@@ -698,6 +698,25 @@ def mor_line(
     return text
 
 
+def process_line(
+    line: str, tokenizer: Tokenizer = None, tagger: Tagger = None
+) -> Generator[str, None, None]:
+    if not tokenizer:
+        tokenizer = _get_tokenizer()
+    if not tagger:
+        tagger = _get_tagger()
+
+    line = line.strip(" \n")
+    yield line
+
+    if line.startswith(("@", "%")):
+        return
+
+    line_plain_text = chat_to_plain_text(line)
+    if line_plain_text and not line_plain_text in rules.SKIP_LINES:
+        yield mor_line(line_plain_text, tokenizer, tagger)
+
+
 def annotate_filestream(
     source_fs,
     target_fs,
@@ -719,14 +738,8 @@ def annotate_filestream(
         tagger = _get_tagger()
 
     for line in source_fs:
-        line = line.strip(" \n")
-        print(line, file=target_fs)
-        line_plain_text = chat_to_plain_text(line)
-        if line_plain_text and not line_plain_text in rules.SKIP_LINES:
-            print(
-                mor_line(line_plain_text, tokenizer, tagger),
-                file=target_fs,
-            )
+        for out in process_line(line):
+            print(out, file=target_fs)
 
 
 def annotate_file(
