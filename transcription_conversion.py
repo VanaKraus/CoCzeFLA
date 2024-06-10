@@ -12,11 +12,23 @@ from nltk.corpus import PlaintextCorpusReader
 import argument_handling as ahandling
 
 PHO_LINE_PREFIX = "%pho:\t"
+COMMENT_LINE_PREFIX = "@"
 
 
 def is_pho_line(line: str) -> bool:
     """If line is %pho (starts with `%pho:\t`)."""
     return line.startswith(PHO_LINE_PREFIX)
+
+
+def is_comment(line: str) -> bool:
+    """If line is a comment."""
+    return line.startswith(COMMENT_LINE_PREFIX)
+
+
+def should_be_removed(line: str) -> bool:
+    """If a line should be removed."""
+    # empty %pho lines should be removed
+    return bool(re.search(r"^%pho:\t\.$", line))
 
 
 def clear_pho_line(line: str) -> str:
@@ -85,32 +97,33 @@ def spaces_around_punctuation(string: str) -> str:
     return string
 
 
-def apply_new_standard(line: str, fix_errors: bool = False) -> str:
+def apply_new_standard(line: str, fix_errors: bool = False) -> str | None:
     """Convert line to the new transcription standard.
 
     Args:
         line (str)
 
     Returns:
-        str
+        str | None: the modified line. None when the line should be removed.
     """
-    line = line.strip("\n")
+    line = line.strip("\r\n")
 
     if is_pho_line(line):
         line = clear_pho_line(line)
 
     line = convert_quotation_marks(line)
     line = horizontal_ellipsis(line)
-    line = spaces_around_punctuation(line)
+    if not is_comment(line):
+        line = spaces_around_punctuation(line)
 
     if fix_errors:
         line = fix_bracket_code_scope(line)
 
-    return line
+    return None if should_be_removed(line) else line
 
 
 class LineComposer:
-    def __init__(self, predicate: Callable[[str], str], target_fs) -> None:
+    def __init__(self, predicate: Callable[[str], str | None], target_fs) -> None:
         self.target_fs = target_fs
         self.predicate = predicate
         self.line = None
@@ -132,8 +145,9 @@ class LineComposer:
             self.line = string.strip("\r\n")
 
     def complete_line(self):
-        completed = self.predicate(self.line)
-        print(completed, file=self.target_fs)
+        if completed := self.predicate(self.line):
+            print(completed, file=self.target_fs)
+
         self.line = None
 
 
