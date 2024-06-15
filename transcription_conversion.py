@@ -12,7 +12,6 @@ from nltk.corpus import PlaintextCorpusReader
 import argument_handling as ahandling
 
 PHO_LINE_PREFIX = "%pho:\t"
-COMMENT_LINE_PREFIX = "@"
 
 
 def is_pho_line(line: str) -> bool:
@@ -20,9 +19,11 @@ def is_pho_line(line: str) -> bool:
     return line.startswith(PHO_LINE_PREFIX)
 
 
-def is_comment(line: str) -> bool:
-    """If line is a comment."""
-    return line.startswith(COMMENT_LINE_PREFIX)
+def allow_amending(line: str) -> bool:
+    """If general amending should be allowed for the line."""
+    return bool(
+        re.match(r"(@(Comment|Situation)|\*[A-Z]{3}|%(err|add|tim|com)):\t", line)
+    )
 
 
 def should_be_removed(line: str) -> bool:
@@ -111,13 +112,13 @@ def apply_new_standard(line: str, fix_errors: bool = False) -> str | None:
     if is_pho_line(line):
         line = clear_pho_line(line)
 
-    line = convert_quotation_marks(line)
-    line = horizontal_ellipsis(line)
-    if not is_comment(line):
+    if allow_amending(line):
+        line = convert_quotation_marks(line)
+        line = horizontal_ellipsis(line)
         line = spaces_around_punctuation(line)
 
-    if fix_errors:
-        line = fix_bracket_code_scope(line)
+        if fix_errors:
+            line = fix_bracket_code_scope(line)
 
     return None if should_be_removed(line) else line
 
