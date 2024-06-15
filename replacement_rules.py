@@ -95,6 +95,7 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     "jejichž": "pro:rel:poss|jejichž-x_pad&x_cislo&x_jmenny_rod",
     # conditional auxiliaries as MorfFlex2 doesn't assign person and number to them
     "bych": "v:aux|být-1&SG&cond&akt&impf",
+    "bysem": "v:aux|být-1&SG&cond&akt&impf",
     "bys": "v:aux|být-2&SG&cond&akt&impf",
     "by": "v:aux|být-3&x_cislo&cond&akt&impf",
     "bychom": "v:aux|být-1&PL&cond&akt&impf",
@@ -102,12 +103,14 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     "byste": "v:aux|být-2&PL&cond&akt&impf",
     # double lemmatization for forms of "aby.*" and "kdyby.*"
     "abych": "conj:sub_v:aux|aby_být-1&SG&cond&akt&impf",
+    "abysem": "conj:sub_v:aux|aby_být-1&SG&cond&akt&impf",
     "abys": "conj:sub_v:aux|aby_být-2&SG&cond&akt&impf",
     "aby": "conj:sub_v:aux|aby_být-3&x_cislo&cond&akt&impf",
     "abychom": "conj:sub_v:aux|aby_být-1&PL&cond&akt&impf",
     "abyste": "conj:sub_v:aux|aby_být-2&PL&cond&akt&impf",
     "abysme": "conj:sub_v:aux|aby_být-1&PL&cond&akt&impf",
     "kdybych": "conj:sub_v:aux|kdyby_být-1&SG&cond&akt&impf",
+    "kdybysem": "conj:sub_v:aux|kdyby_být-1&SG&cond&akt&impf",
     "kdybys": "conj:sub_v:aux|kdyby_být-2&SG&cond&akt&impf",
     "kdyby": "conj:sub_v:aux|kdyby_být-3&x_cislo&cond&akt&impf",
     "kdybychom": "conj:sub_v:aux|kdyby_být-1&PL&cond&akt&impf",
