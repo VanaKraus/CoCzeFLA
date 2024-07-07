@@ -114,7 +114,9 @@ def _get_tokenizer(tokenizer_type: str | None = None) -> Tokenizer:
     return result
 
 
-def tag_string(string: str, tagger: Tagger | None = None) -> list[Token]:
+def tag_string(
+    string: str, tagger: Tagger | None = None, guesser: bool = False
+) -> list[Token]:
     """Tag string using MorphoDiTa tagger.
 
     Args:
@@ -128,7 +130,7 @@ def tag_string(string: str, tagger: Tagger | None = None) -> list[Token]:
     if not tagger:
         tagger = _get_tagger()
 
-    output = list(tagger.tag(string, convert="strip_lemma_id"))
+    output = list(tagger.tag(string, convert="strip_lemma_id", guesser=guesser))
     return output
 
 
@@ -643,7 +645,10 @@ def construct_mor_word(token: Token, flags: dict[tflag, Any] = None) -> str:
 
 
 def mor_line(
-    text: str, tokenizer: Tokenizer | None = None, tagger: Tagger | None = None
+    text: str,
+    tokenizer: Tokenizer | None = None,
+    tagger: Tagger | None = None,
+    guesser: bool = False,
 ) -> str:
     """Create a %mor line from an input text.
 
@@ -685,7 +690,7 @@ def mor_line(
         .replace(constants.PLACEHOLDER_INTERJECTION, "")
     )
 
-    tagged_tokens: list[Token] = tag_string(text, tagger)
+    tagged_tokens: list[Token] = tag_string(text, tagger, guesser)
     result: list[str] = []
 
     for i, token in enumerate(tagged_tokens):
@@ -699,7 +704,7 @@ def mor_line(
 
 
 def process_line(
-    line: str, tokenizer: Tokenizer = None, tagger: Tagger = None
+    line: str, tokenizer: Tokenizer = None, tagger: Tagger = None, guesser: bool = False
 ) -> Generator[str, None, None]:
     if not tokenizer:
         tokenizer = _get_tokenizer()
@@ -714,7 +719,7 @@ def process_line(
 
     line_plain_text = chat_to_plain_text(line)
     if line_plain_text and not line_plain_text in rules.SKIP_LINES:
-        yield mor_line(line_plain_text, tokenizer, tagger)
+        yield mor_line(line_plain_text, tokenizer, tagger, guesser)
 
 
 def annotate_filestream(
@@ -722,6 +727,7 @@ def annotate_filestream(
     target_fs,
     tokenizer: Tokenizer = None,
     tagger: Tagger = None,
+    guesser: bool = False,
 ):
     """Add morphological annotation to filestream.
 
@@ -738,7 +744,7 @@ def annotate_filestream(
         tagger = _get_tagger()
 
     for line in source_fs:
-        for out in process_line(line):
+        for out in process_line(line, tokenizer, tagger, guesser):
             print(out, file=target_fs)
 
 
@@ -747,6 +753,7 @@ def annotate_file(
     path_target: str,
     tokenizer: Tokenizer | None = None,
     tagger: Tagger | None = None,
+    guesser: bool = False,
 ):
     """Add morphological annotation to single file.
 
@@ -767,7 +774,7 @@ def annotate_file(
     with open(path_source, "r", encoding="utf-8") as source_fs:
         with open(path_target, "w", encoding="utf-8") as target_fs:
             print(f"Annotate: {path_source}", file=sys.stderr)
-            annotate_filestream(source_fs, target_fs, tokenizer, tagger)
+            annotate_filestream(source_fs, target_fs, tokenizer, tagger, guesser)
 
 
 def _handle_args(args) -> int:
@@ -781,7 +788,7 @@ def _handle_args(args) -> int:
 
     # take input from stdin
     if args.std:
-        annotate_filestream(sys.stdin, sys.stdout)
+        annotate_filestream(sys.stdin, sys.stdout, guesser=args.guess)
     # take files as input
     elif args.outdir:
         files: list[tuple[str, str]] = []
@@ -812,7 +819,7 @@ def _handle_args(args) -> int:
                 os.makedirs(dname)
 
             try:
-                annotate_file(input_file, output_file)
+                annotate_file(input_file, output_file, guesser=args.guess)
 
             except IsADirectoryError:
                 _ecode = 1
@@ -838,7 +845,7 @@ def _handle_args(args) -> int:
 
 if __name__ == "__main__":
     req_arguments = ahandling.get_argument_subset(
-        "inputfiles", "std", "indir", "outdir", "tokenizer", "tagger"
+        "inputfiles", "std", "indir", "outdir", "tokenizer", "tagger", "guess"
     )
 
     if len(sys.argv) > 1:

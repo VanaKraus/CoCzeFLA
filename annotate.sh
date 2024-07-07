@@ -9,4 +9,4 @@ if ! [ -d "$LOG_D" ] ; then
 fi
 
 ./transcription_conversion.py -f -i "production/orig" -o "production/conv"
-./chroma_tagging.py -i "production/conv" -o "production/annot" 2>/dev/stdout | tee "$LOG_D/annot-$( date "+%H-%M-%S" ).log"
+./chroma_tagging.py -g -i "production/conv" -o "production/annot" 2>/dev/stdout | tee "$LOG_D/annot-$( date "+%H-%M-%S" ).log"

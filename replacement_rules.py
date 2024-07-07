@@ -128,6 +128,8 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     "oč": "prep_pro:int|o_co-4&SG&N",
     # to be tagged as interjections
     "emem": "int|emem",
+    # with the guesser on, "hají" gets lemmatized as "hat"
+    "hají": "int|hají",
 }
 
 # dict: {MorfFlex lemma: target lemma}

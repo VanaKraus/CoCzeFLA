@@ -57,6 +57,12 @@ arguments: dict[str, Argument] = {
         action="store_true",
         help="fix possibly untrivial syntax errors",
     ),
+    "guess": Argument(
+        "-g",
+        "--guess",
+        action="store_true",
+        help="enable MorphoDiTa morphological guesser",
+    ),
 }
 
 
@@ -154,6 +160,12 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
     if "fix" in args:
         result.fix = _get_boolean_input(
             "Would you like potential syntax errors to be fixed automatically?"
+        )
+
+    # TODO: test
+    if "guess" in args:
+        result.guess = _get_boolean_input(
+            "Would you like to enable the MorphoDiTa morphological guesser?"
         )
 
     if result.std:
