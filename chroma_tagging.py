@@ -773,7 +773,7 @@ def annotate_file(
 
     with open(path_source, "r", encoding="utf-8") as source_fs:
         with open(path_target, "w", encoding="utf-8") as target_fs:
-            print(f"Annotate: {path_source}", file=sys.stderr)
+            print(f"Annotate: {path_source} -> {path_target}", file=sys.stderr)
             annotate_filestream(source_fs, target_fs, tokenizer, tagger, guesser)
 
 
@@ -855,6 +855,8 @@ if __name__ == "__main__":
                 according to the CoCzeFLA standards.",
         )
         arguments = parser.parse_args(sys.argv[1:])
+
+        print(f"arguments: {arguments}", file=sys.stderr)
     else:
         arguments = ahandling.argument_walkthrough(req_arguments)
 

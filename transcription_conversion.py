@@ -177,7 +177,7 @@ def convert_file(path_source: str, path_target: str, fix_errors: bool = False):
     try:
         with open(path_source, "r", encoding="utf-8") as source_fs:
             with open(path_target, "w", encoding="utf-8") as target_fs:
-                print(f"Convert\t: {path_source}", file=sys.stderr)
+                print(f"Convert\t: {path_source} -> {path_target}", file=sys.stderr)
                 convert_filestream(source_fs, target_fs, fix_errors)
     except IsADirectoryError:
         print(f"Skip\t: {path_source} (directory)", file=sys.stderr)
@@ -236,6 +236,8 @@ if __name__ == "__main__":
             description="convert CHAT text files to the v3.1 transcription standard.",
         )
         arguments = parser.parse_args(sys.argv[1:])
+
+        print(f"arguments: {arguments}", file=sys.stderr)
     else:
         arguments = ahandling.argument_walkthrough(req_arguments)
 
