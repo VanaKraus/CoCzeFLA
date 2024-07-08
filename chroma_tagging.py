@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
-""" 
-# TODO: module docstring and function docstrings
-# TODO: check that docstrings are up-to-date
-
-the script for the morphological analysis of the longitudinal corpus of spoken Czech child-adult interactions
+"""the script for the morphological analysis of the longitudinal corpus of \
+    spoken Czech child-adult interactions
 
 MIT License
 
@@ -123,6 +120,8 @@ def tag_string(
         string (str): String to be tagged.
         tagger (Tagger | None, optional): Tagger to tag the string with. \
             When tagger == None, _get_tagger() is used. Defaults to None.
+        guesser (bool, optional): use MorphoDiTa's morphological guesser. \
+            Defaults to False.
 
     Returns:
         list[Token]
@@ -173,7 +172,7 @@ def chat_to_plain_text(chat_line: str) -> str | None:
 
     Raises:
         ChatToPlainTextConversionError: When chat_line cannot be converted to plaintext. \
-        This means that the line is likely invalid.
+            This means that the line is likely invalid.
 
     Returns:
         str | None: Line in plain text. Return None when the line is a comment or annotation.
@@ -217,6 +216,7 @@ def pos_mor(token: Token, flags: dict[tflag, Any] = None) -> str:
 
     Args:
         token (Token): MorphoDiTa token.
+        flags (dict[tflag, Any], optional): Flags associated with `token`. Defaults to None.
 
     Returns:
         str: POS code.
@@ -347,7 +347,7 @@ def _get_default_cat(category: cats) -> str:
     """Get default value for a grammatical category. Use when the category value is unclear.
 
     Args:
-        category (str)
+        category (cats)
 
     Returns:
         str: Category value.
@@ -358,6 +358,15 @@ def _get_default_cat(category: cats) -> str:
 def _require_cats(
     categories: dict[cats, str], *requirements: list[cats]
 ) -> dict[str, str]:
+    """Add default entries for selected categories which aren't present in the dictionary.
+
+    Args:
+        categories (dict[cats, str]): Categories dictionary.
+        *requirements (list[cats]): Categories required.
+
+    Returns:
+        dict[str, str]: New dictionary with default entries filled in if required.
+    """
     result = dict(categories)
 
     for req in requirements:
@@ -660,6 +669,8 @@ def mor_line(
             When tokenizer == None, _get_tokenizer() is used. Defaults to None.
         tagger (Tagger | None, optional): MorphoDiTa tagger to use. \
             When tagger == None, _get_tagger() is used. Defaults to None.
+        guesser (bool, optional): use MorphoDiTa's morphological guesser. \
+            Defaults to False.
 
     Returns:
         str: %mor line.
@@ -706,6 +717,20 @@ def mor_line(
 def process_line(
     line: str, tokenizer: Tokenizer = None, tagger: Tagger = None, guesser: bool = False
 ) -> Generator[str, None, None]:
+    """Process single line.
+
+    Args:
+        line (str)
+        tokenizer (Tokenizer | None, optional): MorphoDiTa tokenizer to use. \
+            When tokenizer == None, _get_tokenizer() is used. Defaults to None.
+        tagger (Tagger | None, optional): MorphoDiTa tagger to use. \
+            When tagger == None, _get_tagger() is used. Defaults to None.
+        guesser (bool, optional): use MorphoDiTa's morphological guesser. \
+            Defaults to False.
+
+    Yields:
+        Generator[str, None, None]: Output line(s) generated.
+    """
     if not tokenizer:
         tokenizer = _get_tokenizer()
     if not tagger:
@@ -737,6 +762,8 @@ def annotate_filestream(
         tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. \
             Defaults to _get_tokenizer().
         tagger (Tagger, optional): MorphoDiTa tagger to use. Defaults to _get_tagger().
+        guesser (bool, optional): use MorphoDiTa's morphological guesser. \
+            Defaults to False.
     """
     if not tokenizer:
         tokenizer = _get_tokenizer()
@@ -764,6 +791,8 @@ def annotate_file(
             When tokenizer == None, _get_tokenizer() is used. Defaults to None.
         tagger (Tagger | None, optional): MorphoDiTa tagger to use. \
             When tagger == None, _get_tagger() is used. Defaults to None.
+        guesser (bool, optional): use MorphoDiTa's morphological guesser. \
+            Defaults to False.
     """
 
     if not tokenizer:

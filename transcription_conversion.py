@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+"""Conversion of older transcriptions to the v3.1 transcription standard.
+
+Includes e.g. whitespace separation correction, standardization of quotation marks, \
+or bracket code scope fixing.
+"""
+
 # TODO: license
 
 import os
@@ -50,7 +56,8 @@ def clear_pho_line(line: str) -> str:
     # remove every non-ending character that isn't a space, letter or schwa (@)
     # and every ending character that isn't a dot or a letter
     line = re.sub(
-        r"[^ @a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ](?!$)|[^\.a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]$",
+        r"[^ @a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ](?!$)|"
+        + r"[^\.a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]$",
         r"",
         line,
     )
@@ -75,7 +82,8 @@ def horizontal_ellipsis(string: str) -> str:
 
 
 def fix_bracket_code_scope(string: str) -> str:
-    """Mark token preceding unmarked bracket codes as their scope. Bracket codes beginning with either '/', '=', '?', or 'x' affected."""
+    """Mark token preceding unmarked bracket codes as their scope. \
+        Bracket codes beginning with either '/', '=', '?', or 'x' affected."""
 
     return re.sub(
         r"([ \t]|^)([&,=:_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+) (\[[\/=x\?].*?\])",
@@ -124,7 +132,23 @@ def apply_new_standard(line: str, fix_errors: bool = False) -> str | None:
 
 
 class LineComposer:
+    """Convert single CHAT lines spread out into multiple plaintext lines \
+    into a single line.
+
+    Attributes:
+        predicate (Callable[[str], str  |  None]): Gets called onto a CHAT line when \
+                it's finished.
+        target_fs (_type_): Target filestream.
+    """
+
     def __init__(self, predicate: Callable[[str], str | None], target_fs) -> None:
+        """Initialize new LineComposer instance.
+
+        Args:
+            predicate (Callable[[str], str  |  None]): Gets called onto a CHAT line when \
+                it's finished.
+            target_fs (_type_): Target filestream.
+        """
         self.target_fs = target_fs
         self.predicate = predicate
         self.line = None
@@ -133,19 +157,26 @@ class LineComposer:
         return self
 
     def __exit__(self, exception_type, exception_value, exception_traceback):
-        self.complete_line()
+        self.close_line()
 
     def add(self, string: str):
+        """Add a plaintext line. If the plaintext line doesn't continue the CHAT line \
+            currently being built, the CHAT line gets closed and a new one is started.
+
+        Args:
+            string (str): Plaintext line.
+        """
         if not self.line:
             self.line = string.strip("\r\n")
         # if line starts with a whitespace, it's meant to be appended to the previous one
         elif re.match(r"\s", string):
             self.line += re.sub(r"$\s+|\t+", " ", string.strip("\r\n"))
         else:
-            self.complete_line()
+            self.close_line()
             self.line = string.strip("\r\n")
 
-    def complete_line(self):
+    def close_line(self):
+        """Close the CHAT line currently being built and call `self.predicate` onto it."""
         if completed := self.predicate(self.line):
             print(completed, file=self.target_fs)
 
@@ -159,10 +190,9 @@ def convert_filestream(source_fs, target_fs, fix_errors: bool = False):
         source_fs: Source filestream.
         target_fs: Target filestream.
     """
-
-    predicate = lambda s: apply_new_standard(s, fix_errors)
-
-    with LineComposer(predicate, target_fs) as composer:
+    with LineComposer(
+        lambda s: apply_new_standard(s, fix_errors), target_fs
+    ) as composer:
         for line in source_fs:
             composer.add(line)
 
@@ -188,7 +218,7 @@ def convert_file(path_source: str, path_target: str, fix_errors: bool = False):
 def _handle_args(args):
     # take input from stdin
     if args.std:
-        convert_filestream(sys.stdin, sys.stdout)
+        convert_filestream(sys.stdin, sys.stdout, args.fix)
     # take files as input
     elif args.outdir:
         files: list[tuple[str, str]] = []

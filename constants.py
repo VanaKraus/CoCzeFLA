@@ -34,7 +34,7 @@ class cats(Enum):
     form_type = 11
 
 
-# TODO: annotate
+# order in which grammatical categories appear in MOR words
 GRAMMATICAL_CATEGORY_ORDER: list[cats] = [
     cats.form_type,
     cats.case,
@@ -47,7 +47,7 @@ GRAMMATICAL_CATEGORY_ORDER: list[cats] = [
     cats.aspect,
 ]
 
-# TODO: annotate
+# order in which lexical categories appear in MOR words
 LEXICAL_CATEGORY_ORDER: list[cats] = [cats.comp_deg, cats.negation]
 
 # default values for empty grammatical categories

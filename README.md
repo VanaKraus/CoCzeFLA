@@ -53,6 +53,8 @@ Below is a list of arguments that can be used when executing the scripts from th
 - `-o`, `--outdir`: set output directory
 - `-d`, `--tokenizer`: configure MorphoDiTa tokenizer type; overrides any tokenizer type specified in `constants.TOKENIZER_TYPE` (relevant for `chroma_tagging` only)
 - `-t`, `--tagger`: configure MorphoDiTa tagger; overrides any tagger specified in `constants.TAGGER_PATH` (relevant for `chroma_tagging` only)
+- `-f`, `--fix`: attempt to fix syntax errors in the input (relevant for `transcription_conversion` only)
+- `-g`, `--guess`: use MorphoDiTa's morphological guesser (relevant for `chroma_tagging` only)
 - `-h`, `--help`: see help
 
 ## Morphological annotation

@@ -1,3 +1,5 @@
+# TODO: module, class, and function docstrings
+
 from argparse import ArgumentParser, Namespace
 
 import constants
@@ -156,13 +158,11 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
         if res := input(_PROMPT):
             result.tagger = [res]
 
-    # TODO: test
     if "fix" in args:
         result.fix = _get_boolean_input(
             "Would you like potential syntax errors to be fixed automatically?"
         )
 
-    # TODO: test
     if "guess" in args:
         result.guess = _get_boolean_input(
             "Would you like to enable the MorphoDiTa morphological guesser?"
