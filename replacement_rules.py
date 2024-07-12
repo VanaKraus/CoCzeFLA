@@ -52,8 +52,6 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     (r"xxx", r""),
     # remove "+<" from the beginning of lines
     (r"\+<", ""),
-    # remove quote marks
-    (r"“|”", r""),
     # the function mor_line() will later re-tag these appropriately
     # Nee > ne
     (r"[Nn]ee", r"ne"),
@@ -73,7 +71,7 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
 
 # when a string matches this pattern, we count it as plaintext
 PLAIN_TEXT_CRITERIA: str = (
-    r"^[ ,0a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*(\.|\?|\!|\+\.\.\.|\+\/\.)$"
+    r"^[ ,“”0a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*(\.|\?|\!|\+\.\.\.|\+\/\.)$"
 )
 
 # dict: {word, MOR word}

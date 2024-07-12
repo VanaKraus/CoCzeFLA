@@ -211,19 +211,40 @@ def chat_to_plain_text(chat_line: str) -> str | None:
     return result
 
 
-def pos_mor(token: Token, flags: dict[tflag, Any] = None) -> str:
+class FlaggedToken(Token):
+    """Token with flags associated."""
+
+    flags: dict[tflag, Any]
+
+    def __new__(
+        cls, word: str, lemma: str, tag: str, flags: dict[tflag, Any] | None = None
+    ):
+        instance = super(FlaggedToken, cls).__new__(cls, word, lemma, tag)
+        instance.flags = {} if flags is None else flags
+        return instance
+
+    @classmethod
+    def from_token(
+        cls, token: Token, flags: dict[tflag, Any] | None = None
+    ) -> "FlaggedToken":
+        """Create FlaggedToken from Token.
+
+        Args:
+            token (Token)
+            flags (dict[tflag, Any] | None, optional): Flags associated with given token. Defaults to None.
+        """
+        return cls(token.word, token.lemma, token.tag, flags)
+
+
+def pos_mor(token: FlaggedToken) -> str:
     """Generate a %mor POS code for given token.
 
     Args:
         token (Token): MorphoDiTa token.
-        flags (dict[tflag, Any], optional): Flags associated with `token`. Defaults to None.
 
     Returns:
         str: POS code.
     """
-    if not flags:
-        flags = {}
-
     word, lemma, tag = token.word, token.lemma, token.tag
 
     # POS values of certain lemmas are pre-defined
@@ -237,7 +258,8 @@ def pos_mor(token: Token, flags: dict[tflag, Any] = None) -> str:
         case "N":
             result = "n"
             if (
-                tflag.quotation_beginning not in flags and word == word.capitalize()
+                tflag.quotation_beginning not in token.flags
+                and word == word.capitalize()
             ):  # proper noun
                 result = "n:prop"
 
@@ -607,28 +629,27 @@ def transform_tag(token: Token) -> str:
     return lex_join
 
 
-def construct_mor_word(token: Token, flags: dict[tflag, Any] = None) -> str:
+def construct_mor_word(token: FlaggedToken) -> str:
     """Create an entire %mor morphological annotation for the given token.
 
     Args:
         token (Token): MorphoDiTa token.
-        flags (dict[tflag, Any], optional): Token flags of `token`. Defaults to None.
 
     Returns:
         str
     """
-    pos_label = pos_mor(token, flags)
+    pos_label = pos_mor(token)
 
     if pos_label == "Z":
         return token.lemma
 
-    if tflag.interjection in flags:
+    if tflag.interjection in token.flags:
         return f"int|{token.lemma}"
 
-    if tflag.neologism in flags:
+    if tflag.neologism in token.flags:
         return f"x|{token.word}-neo"
 
-    if tflag.foreign in flags:
+    if tflag.foreign in token.flags:
         return f"x|{token.word}-for"
 
     if token.word in rules.MOR_WORDS_OVERRIDES:
@@ -647,10 +668,26 @@ def construct_mor_word(token: Token, flags: dict[tflag, Any] = None) -> str:
         lemma = rules.MOR_WORDS_LEMMA_OVERRIDES[token.word]
 
     # neologisms not to be lemmatized
-    elif tflag.neologism in flags:
+    elif tflag.neologism in token.flags:
         lemma = token.word
 
     return f"{pos_label}|{lemma}{new_tag}"
+
+
+def filter_tokens(tokens: list[FlaggedToken]) -> list[FlaggedToken]:
+    """Filter for tokens which should appear on the MOR line.
+
+    Args:
+        tokens (list[FlaggedToken])
+
+    Returns:
+        list[FlaggedToken]: A new list. Sublist of `tokens`.
+    """
+    res: list[FlaggedToken] = []
+    for token in tokens:
+        if not token.word in ("“", "”"):
+            res.append(token)
+    return res
 
 
 def mor_line(
@@ -680,7 +717,7 @@ def mor_line(
     if not tagger:
         tagger = _get_tagger()
 
-    flags: list[dict[tflag,]] = []
+    flags: list[dict[tflag, Any]] = []
     for i, word in enumerate(tokens := tokenize_string(text, tokenizer)):
         flag = {}
         if word.endswith(constants.PLACEHOLDER_NEOLOGISM):
@@ -701,11 +738,15 @@ def mor_line(
         .replace(constants.PLACEHOLDER_INTERJECTION, "")
     )
 
-    tagged_tokens: list[Token] = tag_string(text, tagger, guesser)
+    tagged_tokens: list[FlaggedToken] = [
+        FlaggedToken.from_token(token, flags[i])
+        for i, token in enumerate(tag_string(text, tagger, guesser))
+    ]
+    tagged_tokens = filter_tokens(tagged_tokens)
     result: list[str] = []
 
     for i, token in enumerate(tagged_tokens):
-        result.append(construct_mor_word(token, flags[i]))
+        result.append(construct_mor_word(token))
     text = "%mor:\t" + " ".join(result)
 
     # formal adjustments to correct unwanted spaces created by tokenization
