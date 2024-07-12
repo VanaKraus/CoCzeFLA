@@ -130,6 +130,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# IDEs
+.vscode/
+
 ## Project-related
 
 # Directory with MorfFlex models

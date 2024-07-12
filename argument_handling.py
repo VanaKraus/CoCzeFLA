@@ -6,7 +6,7 @@ import constants
 
 
 class Argument:
-    def __init__(self, *flags: list[str], **args) -> None:
+    def __init__(self, *flags: str, **args) -> None:
         self.flags = flags
         self.arguments = args
 
@@ -68,7 +68,7 @@ arguments: dict[str, Argument] = {
 }
 
 
-def get_argument_subset(*argument_ids: list[str]) -> dict[str, Argument]:
+def get_argument_subset(*argument_ids: str) -> dict[str, Argument]:
     res = {}
 
     for aid in argument_ids:

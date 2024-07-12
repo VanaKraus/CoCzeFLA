@@ -11,7 +11,7 @@ or bracket code scope fixing.
 import os
 import re
 import sys
-from typing import Callable
+from typing import Callable, TextIO
 
 from nltk.corpus import PlaintextCorpusReader
 
@@ -138,20 +138,26 @@ class LineComposer:
     Attributes:
         predicate (Callable[[str], str  |  None]): Gets called onto a CHAT line when \
                 it's finished.
-        target_fs (_type_): Target filestream.
+        target_fs (TextIO): Target filestream.
     """
 
-    def __init__(self, predicate: Callable[[str], str | None], target_fs) -> None:
+    predicate: Callable[[str], str | None]
+    target_fs: TextIO
+    line: str
+
+    def __init__(
+        self, predicate: Callable[[str], str | None], target_fs: TextIO
+    ) -> None:
         """Initialize new LineComposer instance.
 
         Args:
             predicate (Callable[[str], str  |  None]): Gets called onto a CHAT line when \
                 it's finished.
-            target_fs (_type_): Target filestream.
+            target_fs (TextIO): Target filestream.
         """
         self.target_fs = target_fs
         self.predicate = predicate
-        self.line = None
+        self.line = ""
 
     def __enter__(self):
         return self
@@ -180,10 +186,10 @@ class LineComposer:
         if completed := self.predicate(self.line):
             print(completed, file=self.target_fs)
 
-        self.line = None
+        self.line = ""
 
 
-def convert_filestream(source_fs, target_fs, fix_errors: bool = False):
+def convert_filestream(source_fs: TextIO, target_fs: TextIO, fix_errors: bool = False):
     """Convert filestream.
 
     Args:

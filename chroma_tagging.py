@@ -48,7 +48,7 @@ files with this script is thus rather slow), even though it thus this job as wel
 import re
 import sys
 import os
-from typing import Any, Generator
+from typing import Any, Generator, Optional, TextIO
 
 from corpy.morphodita import Tagger, Token, Tokenizer
 from nltk.corpus import PlaintextCorpusReader
@@ -63,11 +63,11 @@ _taggers: dict[str, Tagger] = {}
 _tokenizers: dict[str, Tokenizer] = {}
 
 
-def _get_tagger(path: str | None = None) -> Tagger:
+def _get_tagger(path: Optional[str] = None) -> Tagger:
     """Get tagger instance and cache it.
 
     Args:
-        path (str | None, optional): Path to MorfFlex .tagger file. \
+        path (str, optional): Path to MorfFlex .tagger file. \
             When path == None, constants.TAGGER_PATH is used. Defaults to None.
 
     Returns:
@@ -87,11 +87,11 @@ def _get_tagger(path: str | None = None) -> Tagger:
     return result
 
 
-def _get_tokenizer(tokenizer_type: str | None = None) -> Tokenizer:
+def _get_tokenizer(tokenizer_type: Optional[str] = None) -> Tokenizer:
     """Get tokenizer instance and cache it.
 
     Args:
-        tokenizer_type (str | None, optional): MorphoDiTa tokenizer type. \
+        tokenizer_type (str, optional): MorphoDiTa tokenizer type. \
             When tokenizer_type == None, constants.TOKENIZER_TYPE is used. Defaults to None.
 
     Returns:
@@ -112,13 +112,13 @@ def _get_tokenizer(tokenizer_type: str | None = None) -> Tokenizer:
 
 
 def tag_string(
-    string: str, tagger: Tagger | None = None, guesser: bool = False
+    string: str, tagger: Optional[Tagger] = None, guesser: bool = False
 ) -> list[Token]:
     """Tag string using MorphoDiTa tagger.
 
     Args:
         string (str): String to be tagged.
-        tagger (Tagger | None, optional): Tagger to tag the string with. \
+        tagger (Tagger, optional): Tagger to tag the string with. \
             When tagger == None, _get_tagger() is used. Defaults to None.
         guesser (bool, optional): use MorphoDiTa's morphological guesser. \
             Defaults to False.
@@ -133,12 +133,14 @@ def tag_string(
     return output
 
 
-def tokenize_string(string: str, tokenizer: Tokenizer | None = None) -> list[str]:
+def tokenize_string(
+    string: str, tokenizer: Optional[Tokenizer] = None
+) -> list[str | list[str]]:
     """Tokenize string using MorphoDiTa tokenizer.
 
     Args:
         string (str): String to be tokenized.
-        tokenizer (Tokenizer | None, optional): Tokenizer to tokenize the string with. \
+        tokenizer (Tokenizer, optional): Tokenizer to tokenize the string with. \
             When tokenizer == None, _get_tokenizer() is used. Defaults to None.
 
     Returns:
@@ -217,7 +219,7 @@ class FlaggedToken(Token):
     flags: dict[tflag, Any]
 
     def __new__(
-        cls, word: str, lemma: str, tag: str, flags: dict[tflag, Any] | None = None
+        cls, word: str, lemma: str, tag: str, flags: Optional[dict[tflag, Any]] = None
     ):
         instance = super(FlaggedToken, cls).__new__(cls, word, lemma, tag)
         instance.flags = {} if flags is None else flags
@@ -225,13 +227,13 @@ class FlaggedToken(Token):
 
     @classmethod
     def from_token(
-        cls, token: Token, flags: dict[tflag, Any] | None = None
+        cls, token: Token, flags: Optional[dict[tflag, Any]] = None
     ) -> "FlaggedToken":
         """Create FlaggedToken from Token.
 
         Args:
             token (Token)
-            flags (dict[tflag, Any] | None, optional): Flags associated with given token. Defaults to None.
+            flags (dict[tflag, Any], optional): Flags associated with given token. Defaults to None.
         """
         return cls(token.word, token.lemma, token.tag, flags)
 
@@ -377,9 +379,7 @@ def _get_default_cat(category: cats) -> str:
     return constants.EMPTY_GRAM_CAT_DEFAULT[category]
 
 
-def _require_cats(
-    categories: dict[cats, str], *requirements: list[cats]
-) -> dict[str, str]:
+def _require_cats(categories: dict[cats, str], *requirements: cats) -> dict[cats, str]:
     """Add default entries for selected categories which aren't present in the dictionary.
 
     Args:
@@ -414,10 +414,10 @@ def transform_tag(token: Token) -> str:
     gr_delim, lex_delim = "&", "-"
 
     # lexical categories
-    lxcats: dict[str, str] = {}
+    lxcats: dict[cats, str] = {}
 
     # grammatical categories
-    grcats: dict[str, str] = {}
+    grcats: dict[cats, str] = {}
 
     # negation
     if tag[10] == "N":
@@ -692,8 +692,8 @@ def filter_tokens(tokens: list[FlaggedToken]) -> list[FlaggedToken]:
 
 def mor_line(
     text: str,
-    tokenizer: Tokenizer | None = None,
-    tagger: Tagger | None = None,
+    tokenizer: Optional[Tokenizer] = None,
+    tagger: Optional[Tagger] = None,
     guesser: bool = False,
 ) -> str:
     """Create a %mor line from an input text.
@@ -702,9 +702,9 @@ def mor_line(
         text (str): Plain line (stripped of the speaker ID and other annotation). \
             Words with special annotation are expected to use their appropriate \
             placeholders (`constants.PLACEHOLDER_*`).
-        tokenizer (Tokenizer | None, optional): MorphoDiTa tokenizer to use. \
+        tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. \
             When tokenizer == None, _get_tokenizer() is used. Defaults to None.
-        tagger (Tagger | None, optional): MorphoDiTa tagger to use. \
+        tagger (Tagger, optional): MorphoDiTa tagger to use. \
             When tagger == None, _get_tagger() is used. Defaults to None.
         guesser (bool, optional): use MorphoDiTa's morphological guesser. \
             Defaults to False.
@@ -718,7 +718,9 @@ def mor_line(
         tagger = _get_tagger()
 
     flags: list[dict[tflag, Any]] = []
-    for i, word in enumerate(tokens := tokenize_string(text, tokenizer)):
+    for i, word in enumerate(
+        tokens := [str(token) for token in tokenize_string(text, tokenizer)]
+    ):
         flag = {}
         if word.endswith(constants.PLACEHOLDER_NEOLOGISM):
             flag[tflag.neologism] = True
@@ -756,15 +758,18 @@ def mor_line(
 
 
 def process_line(
-    line: str, tokenizer: Tokenizer = None, tagger: Tagger = None, guesser: bool = False
+    line: str,
+    tokenizer: Optional[Tokenizer] = None,
+    tagger: Optional[Tagger] = None,
+    guesser: bool = False,
 ) -> Generator[str, None, None]:
     """Process single line.
 
     Args:
         line (str)
-        tokenizer (Tokenizer | None, optional): MorphoDiTa tokenizer to use. \
+        tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. \
             When tokenizer == None, _get_tokenizer() is used. Defaults to None.
-        tagger (Tagger | None, optional): MorphoDiTa tagger to use. \
+        tagger (Tagger, optional): MorphoDiTa tagger to use. \
             When tagger == None, _get_tagger() is used. Defaults to None.
         guesser (bool, optional): use MorphoDiTa's morphological guesser. \
             Defaults to False.
@@ -789,17 +794,17 @@ def process_line(
 
 
 def annotate_filestream(
-    source_fs,
-    target_fs,
-    tokenizer: Tokenizer = None,
-    tagger: Tagger = None,
+    source_fs: TextIO,
+    target_fs: TextIO,
+    tokenizer: Optional[Tokenizer] = None,
+    tagger: Optional[Tagger] = None,
     guesser: bool = False,
 ):
     """Add morphological annotation to filestream.
 
     Args:
-        source_fs: Source filestream.
-        target_fs: Target filestream.
+        source_fs (TextIO): Source filestream.
+        target_fs (TextIO): Target filestream.
         tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. \
             Defaults to _get_tokenizer().
         tagger (Tagger, optional): MorphoDiTa tagger to use. Defaults to _get_tagger().
@@ -819,8 +824,8 @@ def annotate_filestream(
 def annotate_file(
     path_source: str,
     path_target: str,
-    tokenizer: Tokenizer | None = None,
-    tagger: Tagger | None = None,
+    tokenizer: Optional[Tokenizer] = None,
+    tagger: Optional[Tagger] = None,
     guesser: bool = False,
 ):
     """Add morphological annotation to single file.
@@ -828,9 +833,9 @@ def annotate_file(
     Args:
         path_source (str): Path to the source file.
         path_target (str): Path to the target file. Existing files will be overwritten.
-        tokenizer (Tokenizer | None, optional): MorphoDiTa tokenizer to use. \
+        tokenizer (Tokenizer, optional): MorphoDiTa tokenizer to use. \
             When tokenizer == None, _get_tokenizer() is used. Defaults to None.
-        tagger (Tagger | None, optional): MorphoDiTa tagger to use. \
+        tagger (Tagger, optional): MorphoDiTa tagger to use. \
             When tagger == None, _get_tagger() is used. Defaults to None.
         guesser (bool, optional): use MorphoDiTa's morphological guesser. \
             Defaults to False.
