@@ -213,7 +213,11 @@ def chat_to_plain_text(chat_line: str) -> str | None:
 
 
 class FlaggedToken(Token):
-    """Token with flags associated."""
+    """Token with flags associated.
+
+    Attributes:
+        flags (dict[tflag, Any]): Flags associated with the token.
+    """
 
     flags: dict[tflag, Any]
 
@@ -383,7 +387,7 @@ def _require_cats(categories: dict[cats, str], *requirements: cats) -> dict[cats
 
     Args:
         categories (dict[cats, str]): Categories dictionary.
-        *requirements (list[cats]): Categories required.
+        *requirements (Optional[cats]): Categories required.
 
     Returns:
         dict[str, str]: New dictionary with default entries filled in if required.

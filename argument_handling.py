@@ -1,11 +1,22 @@
-# TODO: module, class, and function docstrings
+"""Provides arguments for transcription_conversion and annotation."""
 
 from argparse import ArgumentParser, Namespace
+from typing import Any
 
 from annot_util import constants
 
 
 class Argument:
+    """Argument specification.
+
+    Attributes:
+        flags (tuple[str, ...]): Flags used to envoke the argument.
+        arguments (dict[str, Any]): Other arguments used in the argument construction in argparse.
+    """
+
+    flags: tuple[str, ...]
+    arguments: dict[str, Any]
+
     def __init__(self, *flags: str, **args) -> None:
         self.flags = flags
         self.arguments = args
@@ -13,7 +24,8 @@ class Argument:
 
 _PROMPT = "> "
 
-arguments: dict[str, Argument] = {
+# argument definitions
+ARGUMENTS: dict[str, Argument] = {
     "std": Argument(
         "-s",
         "--std",
@@ -69,10 +81,19 @@ arguments: dict[str, Argument] = {
 
 
 def get_argument_subset(*argument_ids: str) -> dict[str, Argument]:
+    """Subset `ARGUMENTS`.
+
+    Args:
+        argument_ids (Optional[str]): Keys of `ARGUMENTS` that should be \
+            included in the subset.
+
+    Returns:
+        dict[str, Argument]: Subset; a new dictionary.
+    """
     res = {}
 
     for aid in argument_ids:
-        res |= {aid: arguments[aid]}
+        res |= {aid: ARGUMENTS[aid]}
 
     return res
 
@@ -80,15 +101,33 @@ def get_argument_subset(*argument_ids: str) -> dict[str, Argument]:
 def get_argument_parser(
     args: dict[str, Argument], **parser_init_args
 ) -> ArgumentParser:
+    """Create an ArgumentParser instance from an Argument dictionary.
+
+    Args:
+        args (dict[str, Argument]): Dictionary of arguments.
+        parser_init_args (dict): Additional arguments for the ArgumentParser \
+            constructor.
+
+    Returns:
+        ArgumentParser: ArgumentParser instance.
+    """
     parser = ArgumentParser(**parser_init_args)
 
-    for _, arg in args.items():
+    for arg in args.values():
         parser.add_argument(*arg.flags, **arg.arguments)
 
     return parser
 
 
 def _get_boolean_input(prompt: str) -> bool:
+    """Display a prompt asking for a boolean [y/n] answer on stdin.
+
+    Args:
+        prompt (str): Prompt text.
+
+    Returns:
+        bool: Result of the prompt.
+    """
     while True:
         res = input(f"{prompt} [y/n] ")
         if res in ("y", "Y"):
@@ -98,6 +137,14 @@ def _get_boolean_input(prompt: str) -> bool:
 
 
 def _get_string_input(prompt: str) -> str:
+    """Display a prompt asking for a string answer on stdin.
+
+    Args:
+        prompt (str): Prompt text.
+
+    Returns:
+        str: Answer.
+    """
     print(prompt)
     while True:
         if res := input(_PROMPT):
@@ -105,6 +152,16 @@ def _get_string_input(prompt: str) -> str:
 
 
 def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
+    """Create an interactive CLI argument setup for the user. The result mimics \
+        results of ArgumentParser.parse_args.
+
+    Args:
+        args (dict[str, Argument]): Arguments to be included in the walkthrough \
+            and the resulting Namespace.
+
+    Returns:
+        Namespace: Arguments with their values set-up.
+    """
     result = Namespace(**{id: None for id in args.keys()})
 
     print("--- Configuration walkthrough ---")
