@@ -16,6 +16,6 @@ fi
 echo "Transctiption conversion ($SOURCE_D -> $CONV_D)" | tee -a "$LOGFILE"
 python3 transcription_conversion.py -f -i "$SOURCE_D" -o "$CONV_D" 2>/dev/stdout | tee -a "$LOGFILE"
 echo "Tagging ($CONV_D -> $ANNOT_D)" | tee -a "$LOGFILE"
-python3 chroma_tagging.py -g -i "$CONV_D" -o "$ANNOT_D" 2>/dev/stdout | tee -a "$LOGFILE"
+python3 annotation.py -g -i "$CONV_D" -o "$ANNOT_D" 2>/dev/stdout | tee -a "$LOGFILE"
 
 echo "See $LOGFILE"

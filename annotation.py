@@ -54,9 +54,8 @@ from corpy.morphodita import Tagger, Token, Tokenizer
 from nltk.corpus import PlaintextCorpusReader
 
 import argument_handling as ahandling
-import constants
-from constants import tflag, cats
-import replacement_rules as rules
+from annot_util import constants, replacement_rules as rules
+from annot_util.constants import tflag, cats
 
 # cached taggers and tokenizers
 _taggers: dict[str, Tagger] = {}

@@ -2,7 +2,7 @@
 
 import sys
 
-import chroma_tagging as annot
+import annotation as annot
 
 
 if __name__ == "__main__":

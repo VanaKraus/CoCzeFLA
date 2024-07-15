@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser, Namespace
 
-import constants
+from annot_util import constants
 
 
 class Argument:
