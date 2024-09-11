@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from corpy.morphodita import Token
 
-from constants import tflag
+from annot_util.constants import tflag
 
 
 class FlaggedToken(Token):

@@ -1,5 +1,5 @@
-import constants
-import word_definitions as words
+from annot_util import constants
+import annot_util.word_definitions as words
 
 # list: tuple: (pattern, replacement)
 CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [

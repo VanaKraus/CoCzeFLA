@@ -4,10 +4,10 @@ import re
 
 from corpy.morphodita import Token
 
-import constants
-from constants import cats, tflag
-from flagged_token import FlaggedToken
-import replacement_rules as rules
+from annot_util import constants
+from annot_util.constants import cats, tflag
+from annot_util.flagged_token import FlaggedToken
+import annot_util.replacement_rules as rules
 
 
 class ChatToPlainTextConversionError(Exception):

@@ -5,7 +5,7 @@ from typing import Optional
 
 from corpy.morphodita import Tagger, Tokenizer, Token
 
-import constants
+from annot_util import constants
 
 # cached taggers and tokenizers
 _taggers: dict[str, Tagger] = {}
