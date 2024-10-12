@@ -112,6 +112,13 @@ def word_fragments(string: str) -> str:
     return re.sub(r"&([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)", r"&+\1", string)
 
 
+def missing_words(string: str) -> str:
+    """Convert missing word markings from 0 to &=0."""
+    return re.sub(
+        r"(?<!&=)0([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)", r"&=0\1", string
+    )
+
+
 def repetition_to_false_starts(string: str) -> str:
     """Convert repetition-markers notation to a false-start notation."""
     result = string
@@ -154,6 +161,7 @@ def apply_new_standard(line: str, fix_errors: bool = False) -> str | None:
         line = horizontal_ellipsis(line)
         line = spaces_around_punctuation(line)
         line = word_fragments(line)
+        line = missing_words(line)
 
         if fix_errors:
             line = fix_bracket_code_scope(line)
