@@ -12,6 +12,7 @@ import os
 import re
 import sys
 from typing import Callable, TextIO
+import warnings
 
 from nltk.corpus import PlaintextCorpusReader
 
@@ -106,6 +107,29 @@ def spaces_around_punctuation(string: str) -> str:
     return string
 
 
+def repetition_to_false_starts(string: str) -> str:
+    """Convert repetition-markers notation to a false-start notation."""
+    result = string
+
+    # TODO: what if embedded?
+    while m := re.search(
+        r"<([ ,_&@:=\^a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+?)> \[x ([0-9]+)\]", result
+    ):
+        orig, pattern, count = m[0], m[1], int(m[2])
+        replacement = ""
+
+        for _ in range(count - 1):
+            replacement += f"<{pattern}> [/] "
+        replacement += pattern
+
+        result = result.replace(orig, replacement)
+
+    if marker := re.search(r"\[x [0-9]+\]", result):
+        print(f'Unable to remove "{marker.group(0)}" from "{string}"', file=sys.stderr)
+
+    return result
+
+
 def apply_new_standard(line: str, fix_errors: bool = False) -> str | None:
     """Convert line to the new transcription standard.
 
@@ -127,6 +151,8 @@ def apply_new_standard(line: str, fix_errors: bool = False) -> str | None:
 
         if fix_errors:
             line = fix_bracket_code_scope(line)
+
+        line = repetition_to_false_starts(line)
 
     return None if should_be_removed(line) else line
 
