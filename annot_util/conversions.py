@@ -125,7 +125,7 @@ def generate_mor_pos_label(token: FlaggedToken) -> str:
                     result = "pro:rel"
                 # relative or interrogative
                 case "4" | "Q":
-                    result = "pro:rel/int"
+                    result = "pro:rel_int"
                 # possesive
                 case "S" | "9":
                     result = "pro:poss"

@@ -155,7 +155,7 @@ MOR_POS_OVERRIDES: dict[str, str] = (
         "každý": "pro:indef",
         "svůj": "pro:refl:poss",
         "čí": "pro:int:poss",
-        "být": "v:aux/cop",
+        "být": "v:x",
     }
 )
 

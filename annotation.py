@@ -82,7 +82,7 @@ def construct_mor_word(token: FlaggedToken) -> str:
     pos_label = generate_mor_pos_label(token)
 
     if pos_label == "Z":
-        return token.lemma
+        return "cm|cm" if token.lemma == "," else token.lemma
 
     if tflag.interjection in token.flags:
         return f"int|{token.lemma}"
