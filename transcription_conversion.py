@@ -107,6 +107,11 @@ def spaces_around_punctuation(string: str) -> str:
     return string
 
 
+def word_fragments(string: str) -> str:
+    """Convert word fragment markings from & to &+."""
+    return re.sub(r"&([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)", r"&+\1", string)
+
+
 def repetition_to_false_starts(string: str) -> str:
     """Convert repetition-markers notation to a false-start notation."""
     result = string
@@ -148,6 +153,7 @@ def apply_new_standard(line: str, fix_errors: bool = False) -> str | None:
         line = convert_quotation_marks(line)
         line = horizontal_ellipsis(line)
         line = spaces_around_punctuation(line)
+        line = word_fragments(line)
 
         if fix_errors:
             line = fix_bracket_code_scope(line)

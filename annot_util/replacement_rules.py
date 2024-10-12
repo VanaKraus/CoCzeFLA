@@ -19,7 +19,7 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # remove "<xyz>" followed by "[/]", "[//]", "[=! básnička]", "[=! zpěv]"
     # e.g. [básnička = poem]: *CHI:	<máme_tady_xxx_a_pěkný_bububínek_je_tam_jedno_kůzlátko_a_už_nevylezlo> [=! básnička].
     (
-        r"<[ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*> \[(\/{1,2}|=! (básnička|zpěv))\]",
+        r"<[ &+,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*> \[(\/{1,2}|=! (básnička|zpěv))\]",
         "",
     ),
     # renove all material between "&=" and a space, including cases such as "&=imit:xxx"
@@ -36,7 +36,7 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     ),
     # remove uncertainty and repetition marking, [?] or e.g. [x 2]
     # an optional space after the number, because there was a line with "[x 4 ] ." at which the script broke down
-    (r"<([ &,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*)> \[(x [0-9]+ ?|\?)\]", r"\1"),
+    (r"<([ &+,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*)> \[(x [0-9]+ ?|\?)\]", r"\1"),
     # "přišels [:přišel jsi]" is to be analyzed as "přišel jsi"
     (
         r"[a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+ \[:([ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)\]",
