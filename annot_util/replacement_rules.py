@@ -25,13 +25,13 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # renove all material between "&=" and a space, including cases such as "&=imit:xxx"
     # e.g. "*CHI:	jenže ten traktor najednou &=imit:rána."
     (
-        r"&=[a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ:]+",
+        r"&=[_:a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+",
         "",
     ),
     # remove all material between "&=0" or "&+" and first non-letter character
     # e.g. "*MOT:	toho &vybavová vybarvování."; "*CHI:	koupu 0se 0ve vodě ."
     (
-        r"(&+|&=0)[a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+",
+        r"(&+|&=0)[_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+",
         "",
     ),
     # remove uncertainty and repetition marking, [?] or e.g. [x 2]
@@ -160,4 +160,4 @@ MOR_POS_OVERRIDES: dict[str, str] = (
 )
 
 # lines not to be annotated
-SKIP_LINES: list[str] = [".", "0 ."]
+SKIP_LINES: list[str] = [".", "0 .", "+/.", "+..."]

@@ -454,9 +454,11 @@ def generate_mor_tag(token: Token) -> str:
     )
 
     # join non-empty lexical categories into one string
-    lex_join = lex_delim.join(
-        [lxcats[cat] for cat in constants.LEXICAL_CATEGORY_ORDER if cat in lxcats]
-        + [gr_joined]
-    )
+    lexicals = [
+        lxcats[cat] for cat in constants.LEXICAL_CATEGORY_ORDER if cat in lxcats
+    ]
+    if gr_joined:
+        lexicals += [gr_joined]
+    lex_joined = lex_delim.join(lexicals)
 
-    return lex_join
+    return lex_joined

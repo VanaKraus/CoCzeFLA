@@ -85,7 +85,7 @@ def construct_mor_word(token: FlaggedToken) -> str:
         return "cm|cm" if token.lemma == "," else token.lemma
 
     if tflag.interjection in token.flags:
-        return f"int|{token.lemma}"
+        return f"int|{token.word}"
 
     if tflag.neologism in token.flags:
         return f"x|{token.word}-neo"
