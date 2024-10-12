@@ -9,7 +9,9 @@ or bracket code scope fixing.
 # TODO: license
 
 import os
-import re
+
+# import re
+import regex
 import sys
 from typing import Callable, TextIO
 
@@ -33,14 +35,19 @@ def pho_to_xpho(line: str) -> str:
 def allow_amending(line: str) -> bool:
     """If general amending should be allowed for the line."""
     return bool(
-        re.match(r"(@(Comment|Situation)|\*[A-Z]{3}|%(err|add|tim|com)):\t", line)
+        regex.match(r"(@(Comment|Situation)|\*[A-Z]{3}|%(err|add|tim|com)):\t", line)
     )
+
+
+def is_main_transcription_line(line: str) -> bool:
+    """If the line contains the main-line transcription."""
+    return bool(regex.match(r"\*[A-Z]{3}:\t", line))
 
 
 def should_be_removed(line: str) -> bool:
     """If a line should be removed."""
     # empty %xpho lines should be removed
-    return bool(re.search(r"^%xpho:\t\.$", line))
+    return bool(regex.search(r"^%xpho:\t\.$", line))
 
 
 def clear_pho_line(line: str) -> str:
@@ -60,7 +67,7 @@ def clear_pho_line(line: str) -> str:
 
     # remove every non-ending character that isn't a space, letter or schwa (@)
     # and every ending character that isn't a dot or a letter
-    line = re.sub(
+    line = regex.sub(
         r"[^ @a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ](?!$)|"
         + r"[^\.a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]$",
         r"",
@@ -68,17 +75,17 @@ def clear_pho_line(line: str) -> str:
     )
 
     # add a dot to the end of each line if it's missing
-    line = re.sub(r"([^\.])$", r"\1 .", line)
+    line = regex.sub(r"([^\.])$", r"\1 .", line)
 
     # remove excessive whitespaces
-    line = re.sub(r" {2,}|\t+", r" ", line.strip())
+    line = regex.sub(r" {2,}|\t+", r" ", line.strip())
 
     return prefix + line
 
 
 def convert_quotation_marks(string: str) -> str:
     """Convert any quoters („“; "") to English upper double quotes (“”)."""
-    return re.sub(r"[„\"]([^“\"]*)[“\"]", r"“\1”", string)
+    return regex.sub(r"[„\"]([^“\"]*)[“\"]", r"“\1”", string)
 
 
 def horizontal_ellipsis(string: str) -> str:
@@ -90,8 +97,8 @@ def fix_bracket_code_scope(string: str) -> str:
     """Mark token preceding unmarked bracket codes as their scope. \
         Bracket codes beginning with either '/', '=', '?', or 'x' affected."""
 
-    return re.sub(
-        r"([ \t]|^)([&,=:_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+) (\[[\/=x\?].*?\])",
+    return regex.sub(
+        r"([ \t]|^)([&@,=:_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+) (\[[\/=x\?].*?\])",
         r"\1<\2> \3",
         string,
     )
@@ -100,25 +107,25 @@ def fix_bracket_code_scope(string: str) -> str:
 def spaces_around_punctuation(string: str) -> str:
     """Add spaces around punctuation (`,`, `“`, `”`, `.`, `?`, `!`, `+...`, `+/.`)."""
     # not end-of-line characters
-    string = re.sub(r" *(,|“|”|;) *", r" \1 ", string).strip()
+    string = regex.sub(r" *(,|“|”|;) *", r" \1 ", string).strip()
     # end-of-line characters
-    string = re.sub(r" *(\.|\?|\!|\+\.\.\.|\+/\.)$", r" \1", string).strip()
+    string = regex.sub(r" *(\.|\?|\!|\+\.\.\.|\+/\.)$", r" \1", string).strip()
     # remove excessive whitespaces
-    string = re.sub(r" {2,}", r" ", string)
+    string = regex.sub(r" {2,}", r" ", string)
     # correct for spaces before end-of-line characters that are the only tokens on their lines
-    string = re.sub(r"\t *", r"\t", string)
+    string = regex.sub(r"\t *", r"\t", string)
 
     return string
 
 
 def word_fragments(string: str) -> str:
     """Convert word fragment markings from & to &+."""
-    return re.sub(r"&([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)", r"&+\1", string)
+    return regex.sub(r"&([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)", r"&+\1", string)
 
 
 def missing_words(string: str) -> str:
     """Convert missing word markings from 0 to &=0."""
-    return re.sub(
+    return regex.sub(
         r"(?<!&=)0([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)", r"&=0\1", string
     )
 
@@ -127,21 +134,47 @@ def repetition_to_false_starts(string: str) -> str:
     """Convert repetition-markers notation to a false-start notation."""
     result = string
 
-    # TODO: what if embedded?
-    while m := re.search(
-        r"<([ ,_&+@:=\^a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+?)> \[x ([0-9]+)\]", result
-    ):
-        orig, pattern, count = m[0], m[1], int(m[2])
-        replacement = ""
+    # recursively match all "<foo> [bar]" patterns
+    # contains 3 capture groups: 1st catches "<foo> [bar]", 2nd catches "foo", 3rd catches "bar"
+    matches = regex.fullmatch(r"(?:[^<>]|\+<|(<((?R))> \[([^\[\]]+)\]))*", result)
 
-        for _ in range(count - 1):
-            replacement += f"<{pattern}> [/] "
-        replacement += pattern
+    # unable to match the regex pattern indicates defective syntax
+    if not matches:
+        raise ValueError(f'defective "<> []" syntax in "{string}"')
 
-        result = result.replace(orig, replacement)
+    # used to store which strings should be replaced by which ones
+    replacement_operations: list[tuple[str, str]] = []
+    allcaptures = matches.allcaptures()
 
-    if marker := re.search(r"\[x [0-9]+\]", result):
-        print(f'Unable to remove "{marker.group(0)}" from "{string}"', file=sys.stderr)
+    # iterate through all matched patterns
+    for i, pattern in enumerate(allcaptures[1]):  # type: ignore
+        content, modifier = allcaptures[2][i], allcaptures[3][i]  # type: ignore
+
+        # catch up with already computed replacements
+        for operation in replacement_operations:
+            pattern = pattern.replace(*operation)
+            content = content.replace(*operation)
+
+        # if the pattern is a repetition one
+        if modif_match := regex.match(r"x ([0-9]+)", modifier):
+            count = int(modif_match[1])
+            replacement = ""
+
+            # create the replacement string
+            for _ in range(count - 1):
+                replacement += f"<{content}> [/] "
+            replacement += content
+
+            # store the replacement instructions
+            replacement_operations += [(pattern, replacement)]
+
+    # apply replacement operations
+    for operation in replacement_operations:
+        result = result.replace(*operation)
+
+    # check if we've missed a repetition marker
+    if marker := regex.search(r"\[x [0-9]+\]", result):
+        raise ValueError(f'Unable to remove "{marker.group(0)}" from "{string}"')
 
     return result
 
@@ -166,13 +199,18 @@ def apply_new_standard(line: str, fix_errors: bool = False) -> str | None:
         line = convert_quotation_marks(line)
         line = horizontal_ellipsis(line)
         line = spaces_around_punctuation(line)
-        line = word_fragments(line)
-        line = missing_words(line)
 
-        if fix_errors:
-            line = fix_bracket_code_scope(line)
+        if is_main_transcription_line(line):
+            line = word_fragments(line)
+            line = missing_words(line)
 
-        line = repetition_to_false_starts(line)
+            if fix_errors:
+                line = fix_bracket_code_scope(line)
+
+            try:
+                line = repetition_to_false_starts(line)
+            except ValueError as e:
+                print(e, file=sys.stderr)
 
     return None if should_be_removed(line) else line
 
@@ -221,8 +259,8 @@ class LineComposer:
         if not self.line:
             self.line = string.strip("\r\n")
         # if line starts with a whitespace, it's meant to be appended to the previous one
-        elif re.match(r"\s", string):
-            self.line += re.sub(r"$\s+|\t+", " ", string.strip("\r\n"))
+        elif regex.match(r"\s", string):
+            self.line += regex.sub(r"$\s+|\t+", " ", string.strip("\r\n"))
         else:
             self.close_line()
             self.line = string.strip("\r\n")
