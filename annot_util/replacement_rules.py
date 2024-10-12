@@ -15,31 +15,34 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # token ending in @z:m is to be ignored
     (r"@z:m", r""),
     # lengthened sounds
-    (r"([a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]):", r"\1"),
+    (r"([a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]):", r"\1"),
     # remove "<xyz>" followed by "[/]", "[//]", "[=! básnička]", "[=! zpěv]"
     # e.g. [básnička = poem]: *CHI:	<máme_tady_xxx_a_pěkný_bububínek_je_tam_jedno_kůzlátko_a_už_nevylezlo> [=! básnička].
     (
-        r"<[ &+,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*> \[(\/{1,2}|=! (básnička|zpěv))\]",
+        r"<[ &+,_a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]*> \[(\/{1,2}|=! (básnička|zpěv))\]",
         "",
     ),
     # renove all material between "&=" and a space, including cases such as "&=imit:xxx"
     # e.g. "*CHI:	jenže ten traktor najednou &=imit:rána."
     (
-        r"&=[_:a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+",
+        r"&=[_:a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+",
         "",
     ),
     # remove all material between "&=0" or "&+" and first non-letter character
     # e.g. "*MOT:	toho &vybavová vybarvování."; "*CHI:	koupu 0se 0ve vodě ."
     (
-        r"(&\+|&=0)[_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+",
+        r"(&\+|&=0)[_a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+",
         "",
     ),
     # remove uncertainty and repetition marking, [?] or e.g. [x 2]
     # an optional space after the number, because there was a line with "[x 4 ] ." at which the script broke down
-    (r"<([ &+,_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*)> \[(x [0-9]+ ?|\?)\]", r"\1"),
+    (
+        r"<([ &+,_a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]*)> \[(x [0-9]+ ?|\?)\]",
+        r"\1",
+    ),
     # "přišels [:přišel jsi]" is to be analyzed as "přišel jsi"
     (
-        r"[a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+ \[:([ a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+)\]",
+        r"[a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+ \[:([ a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+)\]",
         r"\1",
     ),
     # interjections with underscores
@@ -47,6 +50,7 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # remove "^", "(.)", "[*]"
     (r"\^", r""),
     (r"\(.\)", r""),
+    (r"<([^<>]+)> \[\*\]", r"\1"),
     (r"\[\*\]", r""),
     # remove "xxx"
     (r"xxx", r""),
@@ -71,7 +75,7 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
 
 # when a string matches this pattern, we count it as plaintext
 PLAIN_TEXT_CRITERIA: str = (
-    r"^[ ,“”0a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]*(\.|\?|\!|\+\.\.\.|\+\/\.)$"
+    r"^[ ,“”0a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]*(\.|\?|\!|\+\.\.\.|\+\/\.)$"
 )
 
 # dict: {word, MOR word}
