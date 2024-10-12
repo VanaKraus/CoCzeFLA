@@ -311,7 +311,9 @@ def _handle_args(args) -> int:
 
         # an input directory specified
         if args.indir:
-            reader = PlaintextCorpusReader(args.indir[0], r".*\.txt", encoding="utf-8")
+            reader = PlaintextCorpusReader(
+                args.indir[0], r".*\.(txt|cha)", encoding="utf-8"
+            )
             files = [
                 (os.path.join(args.indir[0], id), os.path.join(args.outdir[0], id))
                 for id in reader.fileids()

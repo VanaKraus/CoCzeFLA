@@ -129,7 +129,7 @@ def repetition_to_false_starts(string: str) -> str:
 
     # TODO: what if embedded?
     while m := re.search(
-        r"<([ ,_&@:=\^a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+?)> \[x ([0-9]+)\]", result
+        r"<([ ,_&+@:=\^a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+?)> \[x ([0-9]+)\]", result
     ):
         orig, pattern, count = m[0], m[1], int(m[2])
         replacement = ""
@@ -277,7 +277,9 @@ def _handle_args(args):
 
         # an input directory specified
         if args.indir:
-            reader = PlaintextCorpusReader(args.indir[0], r".*\.txt", encoding="utf-8")
+            reader = PlaintextCorpusReader(
+                args.indir[0], r".*\.(txt|cha)", encoding="utf-8"
+            )
             files = [
                 (os.path.join(args.indir[0], id), os.path.join(args.outdir[0], id))
                 for id in reader.fileids()

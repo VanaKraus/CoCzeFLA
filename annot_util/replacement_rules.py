@@ -31,7 +31,7 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # remove all material between "&=0" or "&+" and first non-letter character
     # e.g. "*MOT:	toho &vybavová vybarvování."; "*CHI:	koupu 0se 0ve vodě ."
     (
-        r"(&+|&=0)[_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+",
+        r"(&\+|&=0)[_a-zA-ZáčďéěíňóřšťůúýžÁČĎÉĚÍŇÓŘŠŤŮÚÝŽ]+",
         "",
     ),
     # remove uncertainty and repetition marking, [?] or e.g. [x 2]
