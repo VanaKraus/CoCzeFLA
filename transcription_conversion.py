@@ -12,18 +12,22 @@ import os
 import re
 import sys
 from typing import Callable, TextIO
-import warnings
 
 from nltk.corpus import PlaintextCorpusReader
 
 import argument_handling as ahandling
 
-PHO_LINE_PREFIX = "%pho:\t"
+PHO_LINE_PREFIX = "%xpho:\t"
 
 
 def is_pho_line(line: str) -> bool:
-    """If line is %pho (starts with `%pho:\t`)."""
+    """If line is %xpho (starts with `%xpho:\t`)."""
     return line.startswith(PHO_LINE_PREFIX)
+
+
+def pho_to_xpho(line: str) -> str:
+    """Convert old %pho line label to %xpho."""
+    return line.replace("%pho", "%xpho")
 
 
 def allow_amending(line: str) -> bool:
@@ -35,14 +39,14 @@ def allow_amending(line: str) -> bool:
 
 def should_be_removed(line: str) -> bool:
     """If a line should be removed."""
-    # empty %pho lines should be removed
-    return bool(re.search(r"^%pho:\t\.$", line))
+    # empty %xpho lines should be removed
+    return bool(re.search(r"^%xpho:\t\.$", line))
 
 
 def clear_pho_line(line: str) -> str:
-    """Clear all characters from a %pho line except for spaces, letters, schwas and @s.
+    """Clear all characters from a %xpho line except for spaces, letters, schwas and @s.
 
-    The `%pho:\t` prefix is kept if present.
+    The `%xpho:\t` prefix is kept if present.
 
     Args:
         line (str)
@@ -152,6 +156,8 @@ def apply_new_standard(line: str, fix_errors: bool = False) -> str | None:
         str | None: the modified line. None when the line should be removed.
     """
     line = line.strip("\r\n")
+
+    line = pho_to_xpho(line)
 
     if is_pho_line(line):
         line = clear_pho_line(line)
