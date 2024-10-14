@@ -68,8 +68,8 @@ def clear_pho_line(line: str) -> str:
     # remove every non-ending character that isn't a space, letter or schwa (@)
     # and every ending character that isn't a dot or a letter
     line = regex.sub(
-        r"[^ @a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ](?!$)|"
-        + r"[^\.a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]$",
+        r"[^ @a-zA-ZáäąčćďéěëęíłňńóöřšśťůúüýžźżÁÄĄČĆĎÉĚËĘÍŁŇŃÓÖŘŠŚŤŮÚÜÝŽŹŻ](?!$)|"
+        + r"[^\.a-zA-ZáäąčćďéěëęíłňńóöřšśťůúüýžźżÁÄĄČĆĎÉĚËĘÍŁŇŃÓÖŘŠŚŤŮÚÜÝŽŹŻ]$",
         r"",
         line,
     )
@@ -99,7 +99,7 @@ def fix_bracket_code_scope(string: str) -> str:
 
     # add scope to bracket codes following a regular token
     result = regex.sub(
-        r"([ \t<]|^)([&+@,=:_a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+) (\[[\/=x\?].*?\])",
+        r"([ \t<]|^)([&+@,=:_a-zA-ZáäąčćďéěëęíłňńóöřšśťůúüýžźżÁÄĄČĆĎÉĚËĘÍŁŇŃÓÖŘŠŚŤŮÚÜÝŽŹŻ]+) (\[[\/=x\?].*?\])",
         r"\1<\2> \3",
         string,
     )
@@ -137,14 +137,18 @@ def spaces_around_punctuation(string: str) -> str:
 def word_fragments(string: str) -> str:
     """Convert word fragment markings from & to &+."""
     return regex.sub(
-        r"&([a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+)", r"&+\1", string
+        r"&([a-zA-ZáäąčćďéěëęíłňńóöřšśťůúüýžźżÁÄĄČĆĎÉĚËĘÍŁŇŃÓÖŘŠŚŤŮÚÜÝŽŹŻ]+)",
+        r"&+\1",
+        string,
     )
 
 
 def missing_words(string: str) -> str:
     """Convert missing word markings from 0 to &=0."""
     return regex.sub(
-        r"(?<!&=)0([a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+)", r"&=0\1", string
+        r"(?<!&=)0([a-zA-ZáäąčćďéěëęíłňńóöřšśťůúüýžźżÁÄĄČĆĎÉĚËĘÍŁŇŃÓÖŘŠŚŤŮÚÜÝŽŹŻ]+)",
+        r"&=0\1",
+        string,
     )
 
 
