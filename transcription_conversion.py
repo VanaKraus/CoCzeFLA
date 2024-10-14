@@ -97,12 +97,27 @@ def fix_bracket_code_scope(string: str) -> str:
     """Mark token preceding unmarked bracket codes as their scope. \
         Bracket codes beginning with either '/', '=', '?', or 'x' affected."""
 
-    # FIXME: support recursion - "<ťapu> [x 2] [?] ."
-    return regex.sub(
-        r"([ \t]|^)([&+@,=:_a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+) (\[[\/=x\?].*?\])",
+    # add scope to bracket codes following a regular token
+    result = regex.sub(
+        r"([ \t<]|^)([&+@,=:_a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+) (\[[\/=x\?].*?\])",
         r"\1<\2> \3",
         string,
     )
+
+    # add scope to bracket codes following another bracket code
+    # e.g. "<ťapu> [x 2] [?]" turns to "<<ťapu> [x 2]> [?]"
+
+    # while there's a bracket code following another bracket code without scope added
+    while m := regex.fullmatch(
+        r".*?((<(?:(?:[^<>]*(?2))*[^<>]*)> \[[\/=x\?].*?\]) (\[[\/=x\?].*?\])).*",
+        result,
+    ):
+        allcaptures = m.allcaptures()
+        result = result.replace(
+            allcaptures[1][0], f"<{allcaptures[2][-1]}> {allcaptures[3][0]}"  # type: ignore
+        )
+
+    return result
 
 
 def spaces_around_punctuation(string: str) -> str:
