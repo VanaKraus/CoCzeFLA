@@ -1,4 +1,4 @@
-import replacement_rules as rules
+import annot_util.replacement_rules as rules
 
 import re
 

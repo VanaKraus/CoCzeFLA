@@ -16,6 +16,15 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     (r"@z:m", r""),
     # lengthened sounds
     (r"([a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]):", r"\1"),
+    # words with a hyphen except for the conditional particle -li (e.g. "jsi-li")
+    (
+        r"((?:[ <]|^)[a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+)-(li[ >])",
+        r"\1 \2",
+    ),
+    (
+        r"((?:[ <]|^)[a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+)-([a-zA-ZáäčďéěëíňóöřšťůúüýžÁÄČĎÉĚËÍŇÓÖŘŠŤŮÚÜÝŽ]+[ >])",
+        r"\1\2",
+    ),
     # remove "<xyz>" followed by "[/]", "[//]", "[=! básnička]", "[=! zpěv]"
     # e.g. [básnička = poem]: *CHI:	<máme_tady_xxx_a_pěkný_bububínek_je_tam_jedno_kůzlátko_a_už_nevylezlo> [=! básnička].
     (
@@ -50,7 +59,6 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     # remove "^", "(.)", "[*]"
     (r"\^", r""),
     (r"\(.\)", r""),
-    (r"<([^<>]+)> \[\*\]", r"\1"),
     (r"\[\*\]", r""),
     # remove "xxx"
     (r"xxx", r""),
@@ -128,6 +136,8 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     "zač": "prep_pro:int|za_co-4&SG&N",
     "nač": "prep_pro:int|na_co-4&SG&N",
     "oč": "prep_pro:int|o_co-4&SG&N",
+    # tagged as subordinate conjunction by MorphoDiTa
+    "li": "part|li",
     # to be tagged as interjections
     "emem": "int|emem",
     # with the guesser on, "hají" gets lemmatized as "hat"
@@ -164,4 +174,4 @@ MOR_POS_OVERRIDES: dict[str, str] = (
 )
 
 # lines not to be annotated
-SKIP_LINES: list[str] = [".", "0 .", "+/.", "+..."]
+SKIP_LINES: list[str] = [".", "0 .", "+/.", "+...", "!"]
