@@ -170,8 +170,10 @@ MOR_POS_OVERRIDES: dict[str, str] = (
         "svůj": "pro:refl:poss",
         "čí": "pro:int:poss",
         "být": "v:x",
+        "chtít": "v:x",
+        "mít": "v:x",
     }
 )
 
 # lines not to be annotated
-SKIP_LINES: list[str] = [".", "0 .", "+/.", "+...", "!"]
+SKIP_LINES: list[str] = [".", "0 .", "+/.", "+...", "!", "?"]

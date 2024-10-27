@@ -84,8 +84,8 @@ def clear_pho_line(line: str) -> str:
 
 
 def convert_quotation_marks(string: str) -> str:
-    """Convert any quoters („“; "") to English upper double quotes (“”)."""
-    return regex.sub(r"[„\"]([^“\"]*)[“\"]", r"“\1”", string)
+    """Convert any quotes („“; ""; '') to English upper double quotes (“”)."""
+    return regex.sub(r"[„\"']([^“\"']*)[“\"']", r"“\1”", string)
 
 
 def horizontal_ellipsis(string: str) -> str:
@@ -295,7 +295,7 @@ class LineComposer:
         self.line = ""
 
 
-def convert_filestream(source_fs: TextIO, target_fs: TextIO, fix_errors: bool = False):
+def convert_filestream(source_fs, target_fs, fix_errors: bool = False):
     """Convert filestream.
 
     Args:
