@@ -235,8 +235,8 @@ def process_line(
 
 
 def annotate_filestream(
-    source_fs: TextIO,
-    target_fs: TextIO,
+    source_fs,
+    target_fs,
     tokenizer: Optional[Tokenizer] = None,
     tagger: Optional[Tagger] = None,
     guesser: bool = False,
