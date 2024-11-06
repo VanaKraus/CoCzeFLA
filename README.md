@@ -81,7 +81,12 @@ Use `transcription_conversion.py` to convert a CHAT file to the v3.1 CoCzeFLA tr
 
 ## Workflow
 
-`convert_and_annotate.sh` calls first `transcription_conversion.py` and second `annotation.py` on input files in `production/orig` while saving logs from both processes. It's meant to help streamline the workflow.
+`convert_and_annotate.sh` calls first `transcription_conversion.py` and second `annotation.py` while saving logs from both processes. It's meant to help streamline the workflow.
+
+Two use cases are available:
+
+1. specify the directory with the original files (`--src`), the directory where the converted files will be stored (`--conv`), and the directory where the annotated files will be stored (`--annot`) separately
+2. specify a production directory, which is expected to have an `orig` subdirectory (equivalent to the one passed by `--src`), a `conv` subdirectory (passed as `--conv`), and an `annot` subdirectory (passed as `--annot`).
 
 ## Contact
 
