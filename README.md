@@ -75,6 +75,10 @@ You can amend basic MorphoDiTa configuration used by the script by altering corr
 
 You can provide all relevant functions with your own tagger and tokenizer instances if you need finer control.
 
+### Transcription verification
+
+Use `debugging/line_validity_checker.py` to verify if a CHAT file will cause the annotation to crash due to it not following the expected transcription standard.
+
 ## Conversion to v3.1 transcription standard
 
 Use `transcription_conversion.py` to convert a CHAT file to the v3.1 CoCzeFLA transcription standard.
@@ -87,6 +91,7 @@ Two use cases are available:
 
 1. specify the directory with the original files (`--src`), the directory where the converted files will be stored (`--conv`), and the directory where the annotated files will be stored (`--annot`) separately
 2. specify a production directory, which is expected to have an `orig` subdirectory (equivalent to the one passed by `--src`), a `conv` subdirectory (passed as `--conv`), and an `annot` subdirectory (passed as `--annot`).
+
 
 ## Contact
 
