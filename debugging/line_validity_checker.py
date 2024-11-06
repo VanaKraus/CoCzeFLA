@@ -78,17 +78,23 @@ def _handle_args(args) -> int:
 
 
 if __name__ == "__main__":
+    # get current time and open the .log file
     now = datetime.datetime.now()
     date = now.strftime("%Y-%m-%d")
     time = now.strftime("%H-%M-%S")
     tfile_dir = os.path.join("validity-checks", date)
-    tfile = os.path.join(tfile_dir, f"{time}.log")
+    tfile = os.path.join(tfile_dir, f"vcheck_{date}_{time}.log")
 
     if not os.path.exists(tfile_dir):
         os.makedirs(tfile_dir)
 
     _logging_fs = open(tfile, "w+")
 
+    # info about the run
+    _log(f"Validate {now:%Y-%m-%d %H:%M:%S}")
+    _log(f"{sys.argv[1:] = }")
+
+    # set and parse CLI arguments
     req_arguments = ahandling.get_argument_subset("inputfiles", "std", "indir")
 
     if len(sys.argv) > 1:
@@ -103,8 +109,13 @@ if __name__ == "__main__":
     else:
         arguments = ahandling.argument_walkthrough(req_arguments)
 
+    # run the validator
     ECODE = _handle_args(arguments)
 
+    # close the .log file
+    _log(f"Done {datetime.datetime.now():%Y-%m-%d %H:%M:%S}")
     _logging_fs.close()
+
+    print(f"See {tfile}")
 
     sys.exit(ECODE)
