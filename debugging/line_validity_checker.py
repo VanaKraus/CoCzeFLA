@@ -63,7 +63,7 @@ def _handle_args(args) -> int:
         for input_file in files:
             _log(input_file)
 
-            with open(input_file, "r") as f:
+            with open(input_file, "r", encoding="utf-8") as f:
                 for line in f:
                     try:
                         for _ in annot.process_line(line):
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     if not os.path.exists(tfile_dir):
         os.makedirs(tfile_dir)
 
-    _logging_fs = open(tfile, "w+")
+    _logging_fs = open(tfile, "w+", encoding="utf-8")
 
     # info about the run
     _log(f"Validate {now:%Y-%m-%d %H:%M:%S}")
