@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser, Namespace
 from typing import Any
+import re
 
 from annot_util import constants
 
@@ -136,18 +137,24 @@ def _get_boolean_input(prompt: str) -> bool:
             return False
 
 
-def _get_string_input(prompt: str) -> str:
+def _get_string_input(prompt: str, allow_empty: bool = False) -> str:
     """Display a prompt asking for a string answer on stdin.
 
     Args:
         prompt (str): Prompt text.
+        allow_empty (bool): Allow empty string as a return value.
 
     Returns:
         str: Answer.
     """
     print(prompt)
     while True:
-        if res := input(_PROMPT):
+        if (res := input(_PROMPT)) or allow_empty:
+            if re.search(r"^'.+'$", res):
+                res = res.strip("'")
+            elif re.search(r'^".+"$', res):
+                res = res.strip('"')
+
             return res
 
 
@@ -167,12 +174,12 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
     print("--- Configuration walkthrough ---")
 
     if "indir" in args:
-        print(
+        indir = _get_string_input(
             "Set directory with input files. "
             + "Leave empty if you wish to provide individual files as input "
-            + "or don't want to provide any input file at all:"
+            + "or don't want to provide any input file at all:",
+            allow_empty=True,
         )
-        indir = input(_PROMPT)
 
         if indir:
             result.indir = [indir]
@@ -180,12 +187,14 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
             inputfiles = []
 
             while True:
-                print(
-                    "Add an additional input file. Leave empty to finish the list:"
-                    if inputfiles
-                    else "Add an input file. Leave empty to provide utterances line-by-line:"
+                file = _get_string_input(
+                    (
+                        "Add an additional input file. Leave empty to finish the list:"
+                        if inputfiles
+                        else "Add an input file. Leave empty to provide utterances line-by-line:"
+                    ),
+                    allow_empty=True,
                 )
-                file = input(_PROMPT)
 
                 if file:
                     inputfiles += [file]
@@ -200,20 +209,22 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
             result.outdir = [_get_string_input("Set output directory:")]
 
     if "tokenizer" in args:
-        print(
-            "Configure tokenizer type. Leave empty if you want to use "
-            + f"the default value ('{constants.TOKENIZER_TYPE}'):"
-        )
-        if res := input(_PROMPT):
-            result.tokenizer = [res]
+        result.tokenizer = [
+            _get_string_input(
+                "Configure tokenizer type. Leave empty if you want to use "
+                + f"the default value ('{constants.TOKENIZER_TYPE}'):",
+                allow_empty=True,
+            )
+        ]
 
     if "tagger" in args:
-        print(
-            "Configure path to your tagger. Leave empty if you want to "
-            + f"use the default value ('{constants.TAGGER_PATH}'):"
-        )
-        if res := input(_PROMPT):
-            result.tagger = [res]
+        result.tagger = [
+            _get_string_input(
+                "Configure path to your tagger. Leave empty if you want to "
+                + f"use the default value ('{constants.TAGGER_PATH}'):",
+                allow_empty=True,
+            )
+        ]
 
     if "fix" in args:
         result.fix = _get_boolean_input(
