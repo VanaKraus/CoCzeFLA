@@ -209,22 +209,25 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
             result.outdir = [_get_string_input("Set output directory:")]
 
     if "tokenizer" in args:
-        result.tokenizer = [
-            _get_string_input(
-                "Configure tokenizer type. Leave empty if you want to use "
-                + f"the default value ('{constants.TOKENIZER_TYPE}'):",
-                allow_empty=True,
-            )
-        ]
+        uinput = _get_string_input(
+            "Configure tokenizer type. Leave empty if you want to use "
+            + f"the default value ('{constants.TOKENIZER_TYPE}'):",
+            allow_empty=True,
+        )
+
+        if uinput:
+            result.tokenizer = [uinput]
 
     if "tagger" in args:
-        result.tagger = [
-            _get_string_input(
-                "Configure path to your tagger. Leave empty if you want to "
-                + f"use the default value ('{constants.TAGGER_PATH}'):",
-                allow_empty=True,
-            )
-        ]
+
+        uinput = _get_string_input(
+            "Configure path to your tagger. Leave empty if you want to "
+            + f"use the default value ('{constants.TAGGER_PATH}'):",
+            allow_empty=True,
+        )
+
+        if uinput:
+            result.tagger = [uinput]
 
     if "fix" in args:
         result.fix = _get_boolean_input(
