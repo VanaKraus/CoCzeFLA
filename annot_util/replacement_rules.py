@@ -16,6 +16,8 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     (r"@z:m", r""),
     # lengthened sounds
     (r"([a-zA-ZáäąčćďéěëęíłňńóöřšśťůúüýžźżÁÄĄČĆĎÉĚËĘÍŁŇŃÓÖŘŠŚŤŮÚÜÝŽŹŻ]):", r"\1"),
+    # remove "^"
+    (r"\^", r""),
     # words with a hyphen except for the conditional particle -li (e.g. "jsi-li")
     (
         r"((?:[ <]|^)[a-zA-ZáäąčćďéěëęíłňńóöřšśťůúüýžźżÁÄĄČĆĎÉĚËĘÍŁŇŃÓÖŘŠŚŤŮÚÜÝŽŹŻ]+)-(li[ >])",
@@ -56,8 +58,7 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     ),
     # interjections with underscores
     (r"_", r""),
-    # remove "^", "(.)", "[*]"
-    (r"\^", r""),
+    # remove "(.)", "[*]"
     (r"\(.\)", r""),
     (r"\[\*\]", r""),
     # remove "xxx"
