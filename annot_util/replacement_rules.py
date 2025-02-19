@@ -159,22 +159,57 @@ MOR_WORDS_LEMMA_OVERRIDES: dict[str, str] = {
     for word in word_list
 }
 
-# dict: {lemma: pos}
-MOR_POS_OVERRIDES: dict[str, str] = (
-    {lemma: "adv:pro" for lemma in words.PRONOMINAL_ADVERBS}
-    | {lemma: "adv:pro:neg" for lemma in words.NEGATIVE_PRONOMINAL_ADVERBS}
-    | {lemma: "n:pt" for lemma in words.PLURAL_INVARIABLE_NOUNS}
-    | {lemma: "n:prop:pt" for lemma in words.PLURAL_INVARIABLE_PROPER_NOUNS}
-    | {lemma: "v:mod" for lemma in words.MODAL_VERBS}
+# dict: {lemma: pos} | dict: {lemma: word: pos}
+# if word == '_' denotes the default value
+MOR_POS_OVERRIDES: dict[str, dict[str, str]] = (
+    {lemma: {"_": "adv:pro"} for lemma in words.PRONOMINAL_ADVERBS}
+    | {lemma: {"_": "adv:pro:neg"} for lemma in words.NEGATIVE_PRONOMINAL_ADVERBS}
+    | {lemma: {"_": "n:pt"} for lemma in words.PLURAL_INVARIABLE_NOUNS}
+    | {lemma: {"_": "n:prop:pt"} for lemma in words.PLURAL_INVARIABLE_PROPER_NOUNS}
+    | {lemma: {"_": "v:mod"} for lemma in words.MODAL_VERBS}
     | {
-        "každý": "pro:indef",
-        "svůj": "pro:refl:poss",
-        "čí": "pro:int:poss",
-        "být": "v:x",
-        "chtít": "v:x",
-        "mít": "v:x",
+        "každý": {"_": "pro:indef"},
+        "svůj": {"_": "pro:refl:poss"},
+        "čí": {"_": "pro:int:poss"},
+        "být": {
+            "je": "v:cop",
+            "jsou": "v:cop",
+            "seš": "v:cop",
+            "nejsem": "v:cop",
+            "nejsi": "v:cop",
+            "není": "v:cop",
+            "nejsme": "v:cop",
+            "nejste": "v:cop",
+            "nejsou": "v:cop",
+            "buď": "v:cop",
+            "buďme": "v:cop",
+            "buďte": "v:cop",
+            "nebuď": "v:cop",
+            "nebuďme": "v:cop",
+            "nebuďte": "v:cop",
+            "být": "v:cop",
+            "byl": "v:cop",
+            "byla": "v:cop",
+            "bylo": "v:cop",
+            "byli": "v:cop",
+            "byly": "v:cop",
+            "nebyl": "v:cop",
+            "nebyla": "v:cop",
+            "nebylo": "v:cop",
+            "nebyli": "v:cop",
+            "nebyly": "v:cop",
+            "_": "v:x",
+        },
+        "chtít": {"_": "v:x"},
+        "mít": {"_": "v:x"},
     }
 )
 
 # lines not to be annotated
 SKIP_LINES: list[str] = [".", "0 .", "+/.", "+...", "!", "?"]
+
+
+# verify integrity
+for key in MOR_POS_OVERRIDES:
+    if "_" not in MOR_POS_OVERRIDES[key]:
+        raise ValueError(f"MOR_POS_OVERRIDE config: no default value for lemma '{key}'")

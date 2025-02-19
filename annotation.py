@@ -81,6 +81,13 @@ def construct_mor_word(token: FlaggedToken) -> str:
     """
     pos_label = generate_mor_pos_label(token)
 
+    if token.lemma in rules.MOR_POS_OVERRIDES:
+        lemma_pos_override = rules.MOR_POS_OVERRIDES[token.lemma]
+        if token.word in lemma_pos_override:
+            pos_label = lemma_pos_override[token.word]
+        else:
+            pos_label = lemma_pos_override["_"]
+
     if pos_label == "Z":
         return "cm|cm" if token.lemma == "," else token.lemma
 

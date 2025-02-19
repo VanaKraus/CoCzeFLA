@@ -82,10 +82,6 @@ def generate_mor_pos_label(token: FlaggedToken) -> str:
     """
     word, lemma, tag = token.word, token.lemma, token.tag
 
-    # POS values of certain lemmas are pre-defined
-    if lemma in rules.MOR_POS_OVERRIDES:
-        return rules.MOR_POS_OVERRIDES[lemma]
-
     result = ""
 
     match tag[0]:
