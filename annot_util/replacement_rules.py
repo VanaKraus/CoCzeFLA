@@ -188,6 +188,7 @@ MOR_POS_OVERRIDES: dict[str, dict[str, str]] = (
             "nebuďme": "v:cop",
             "nebuďte": "v:cop",
             "být": "v:cop",
+            "nebýt": "v:cop",
             "byl": "v:cop",
             "byla": "v:cop",
             "bylo": "v:cop",
