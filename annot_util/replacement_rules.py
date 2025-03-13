@@ -146,7 +146,73 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
 }
 
 # dict: {MorfFlex lemma: target lemma}
-MOR_MLEMMAS_LEMMA_OVERRIDES: dict[str, str] = {"tento": "ten", "tenhle": "ten"}
+MOR_MLEMMAS_LEMMA_OVERRIDES: dict[str, str] = (
+    {"tento": "ten", "tenhle": "ten"}
+    | {s: "dobrý" for s in ["lepší", "nejlepší"]}
+    | {s: "špatný" for s in ["horší", "nejhorší"]}
+    | {s: "dlouhý" for s in ["delší", "nejdelší"]}
+    | {s: "malý" for s in ["menší", "nejmenší"]}
+    | {s: "velký" for s in ["větší", "největší"]}
+    | {s: "dobře" for s in ["lépe", "líp", "nejlépe", "nejlíp"]}
+    | {s: "špatně" for s in ["hůře", "hůř", "nejhůře", "nejhůř"]}
+    | {
+        s: "brzy"
+        for s in [
+            "dříve",
+            "dřív",
+            "dřívěji",
+            "dřívějc",
+            "nejdříve",
+            "nejdřív",
+            "nejdřívěji",
+            "nejdřívějc",
+        ]
+    }
+    | {s: "dlouho" for s in ["déle", "dýl", "nejdéle", "nejdýl"]}
+    | {s: "vysoko" for s in ["výše", "výš", "vejš", "nejvýše", "nejvýš", "nejvejš"]}
+    | {s: "málo" for s in ["méně", "míň", "nejméně", "nejmíň"]}
+    | {s: "hodně" for s in ["více", "víc", "nejvíce", "nejvíc"]}
+    | {s: "těžce" for s in ["tíž", "tíže", "tížeji", "nejtíž", "nejtíže", " nejtížeji"]}
+    | {
+        s: "snadno"
+        for s in [
+            "snáz",
+            "snáze",
+            "snázeji",
+            "snadněji",
+            "snadnějc",
+            "nejsnáz",
+            "nejsnáze",
+            "nejsnadněji",
+            "nejsnadnějc",
+        ]
+    }
+    | {
+        s: "hluboko"
+        for s in [
+            "hloub",
+            "hlouběji",
+            "hloubějc",
+            "nejhloub",
+            "nejhlouběji",
+            "nejhloubějc",
+        ]
+    }
+    | {
+        s: "široko"
+        for s in [
+            "šíře",
+            "šíř",
+            "šířeji",
+            "šířejc",
+            "nejšíře",
+            "nejšíř",
+            "nejšířeji",
+            "nejšířejc",
+        ]
+    }
+    | {s: "úzce" for s in ["úže", "úžeji", "úžejc", "nejúže", "nejúžeji", "nejúžejc"]}
+)
 
 # dict: {word form: target lemma}
 MOR_WORDS_LEMMA_OVERRIDES: dict[str, str] = {
