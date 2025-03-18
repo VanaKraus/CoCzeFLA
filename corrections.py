@@ -13,7 +13,7 @@ from annot_util.conversions import chat_to_plain_text
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class ChatToken:
@@ -27,7 +27,7 @@ class ChatToken:
 
         if word not in replrules.SKIP_LINES:
             m = re.match(
-                r"([a-z:]+)\|([a-zA-ZáäąčćďéěëęíłňńóöřšśťůúüýžźżÁÄĄČĆĎÉĚËĘÍŁŇŃÓÖŘŠŚŤŮÚÜÝŽŹŻ]+)(-([a-zA-Z0-9&]+))?",
+                r"([a-z:_]+)\|([a-zA-ZáäąčćďéěëęíłňńóöřšśťůúüýžźżÁÄĄČĆĎÉĚËĘÍŁŇŃÓÖŘŠŚŤŮÚÜÝŽŹŻ]+)(-([a-zA-Z0-9&]+))?",
                 mor_word,
             )
             if not m:
@@ -73,7 +73,7 @@ def mor_parse(main_line: str, mor_line: str) -> list[ChatToken]:
     if not re.match(r"\*[A-Z]{3}:\t", main_line):
         raise ValueError("Main line provided isn't a main line")
     if not mor_line.startswith("%mor:\t"):
-        raise ValueError("MOR line provided isn't a MOR line")
+        raise ValueError(f"MOR line provided isn't a MOR line ({mor_line=})")
 
     main_content = chat_to_plain_text(main_line)
     if not main_content:
@@ -143,7 +143,7 @@ def _apply_token_modifier(
 
 
 def vcop(lines: list[str]) -> list[str]:
-    logger.debug("vcop called")
+    logger.debug("vcop: called")
 
     def _modif(token: ChatToken) -> ChatToken:
         if (
@@ -153,6 +153,18 @@ def vcop(lines: list[str]) -> list[str]:
             and replrules.MOR_POS_OVERRIDES[token.lemma][token.word] == "v:cop"
         ):
             token.pos = replrules.MOR_POS_OVERRIDES[token.lemma][token.word]
+        return token
+
+    return _apply_token_modifier(lines, _modif)
+
+
+def adj_adv_compdeg(lines: list[str]):
+    logger.debug("adj_adv_compdeg: called")
+
+    def _modif(token: ChatToken) -> ChatToken:
+        if token.lemma and token.lemma in replrules._ADJ_ADV_COMPDEG_LEMMA_OVERRIDES:
+            token.lemma = replrules._ADJ_ADV_COMPDEG_LEMMA_OVERRIDES[token.lemma]
+
         return token
 
     return _apply_token_modifier(lines, _modif)
@@ -168,6 +180,8 @@ def build_predicate_list(args) -> list[Callable[[list[str]], list[str]]]:
         res += [vcop]
     if args.part_nogram:
         res += [part_nogram]
+    if args.adj_adv_compdeg:
+        res += [adj_adv_compdeg]
 
     return res
 
@@ -202,6 +216,11 @@ if __name__ == "__main__":
         "--part-nogram",
         action="store_true",
         help="remove grammatical categories from the word co when annotated as part",
+    )
+    parser.add_argument(
+        "--adj-adv-compdeg",
+        action="store_true",
+        help="use a positive form as lemma for adjectives and adverbs",
     )
 
     args = parser.parse_args(sys.argv[1:])

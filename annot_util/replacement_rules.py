@@ -145,10 +145,8 @@ MOR_WORDS_OVERRIDES: dict[str, str] = {
     "hají": "int|hají",
 }
 
-# dict: {MorfFlex lemma: target lemma}
-MOR_MLEMMAS_LEMMA_OVERRIDES: dict[str, str] = (
-    {"tento": "ten", "tenhle": "ten"}
-    | {s: "dobrý" for s in ["lepší", "nejlepší"]}
+_ADJ_ADV_COMPDEG_LEMMA_OVERRIDES: dict[str, str] = (
+    {s: "dobrý" for s in ["lepší", "nejlepší"]}
     | {s: "špatný" for s in ["horší", "nejhorší"]}
     | {s: "dlouhý" for s in ["delší", "nejdelší"]}
     | {s: "malý" for s in ["menší", "nejmenší"]}
@@ -213,6 +211,12 @@ MOR_MLEMMAS_LEMMA_OVERRIDES: dict[str, str] = (
     }
     | {s: "úzce" for s in ["úže", "úžeji", "úžejc", "nejúže", "nejúžeji", "nejúžejc"]}
 )
+
+# dict: {MorfFlex lemma: target lemma}
+MOR_MLEMMAS_LEMMA_OVERRIDES: dict[str, str] = {
+    "tento": "ten",
+    "tenhle": "ten",
+} | _ADJ_ADV_COMPDEG_LEMMA_OVERRIDES
 
 # dict: {word form: target lemma}
 MOR_WORDS_LEMMA_OVERRIDES: dict[str, str] = {
