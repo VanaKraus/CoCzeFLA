@@ -10,6 +10,7 @@ from nltk.corpus import PlaintextCorpusReader
 
 import annot_util.replacement_rules as replrules
 from annot_util.conversions import chat_to_plain_text
+from annotation import filter_tokens, FlaggedToken
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -84,8 +85,25 @@ def mor_parse(main_line: str, mor_line: str) -> list[ChatToken]:
     main_content_list = main_content.split(" ")
     mor_content_list = mor_content.split(" ")
 
+    # an ugly workaround to simulate how tokens from the main line would get removed
+    main_fake_flagged_tokens = [FlaggedToken(s, "", "") for s in main_content_list]
+    main_fake_flagged_tokens_filtered = filter_tokens(main_fake_flagged_tokens)
+
+    # create a map telling which tokens to keep
+    mp: list[bool] = []
+    j = 0  # iterator for the filtered tokens
+    for t in main_fake_flagged_tokens:
+        matching = main_fake_flagged_tokens_filtered[j].word == t.word
+        mp += [matching]
+        j += int(matching)
+
+    main_content_list = [main_content_list[i] for i in range(len(mp)) if mp[i]]
+
     if len(main_content_list) != len(mor_content_list):
-        raise ValueError("main line and MOR line length mismatch")
+        logger.debug(f"mor_parse: length mismatch {main_line=} {mor_line=}")
+        raise ValueError(
+            f"main line and MOR line length mismatch ({len(main_content_list)=} {len(mor_content_list)=})"
+        )
 
     res = []
     for i in range(len(main_content_list)):
@@ -119,11 +137,10 @@ def _apply_token_modifier(
     res = []
     i = 0
 
-    while i < len(lines):
-        if re.match(r"\*[A-Z]{3}:\t", lines[i]):
-            main_line = lines[i]
-            mor_line = lines[i + 1]
-
+    while i < len(lines) - 1:
+        if re.match(r"\*[A-Z]{3}:\t", (main_line := lines[i])) and (
+            mor_line := lines[i + 1]
+        ).startswith("%mor:\t"):
             tokens = mor_parse(main_line, mor_line)
 
             for j in range(len(tokens)):
