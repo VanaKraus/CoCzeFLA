@@ -3,6 +3,7 @@
 import argparse
 import logging
 import re
+import os
 import sys
 from typing import Self, TextIO, Callable
 
@@ -28,7 +29,7 @@ class ChatToken:
 
         if word not in replrules.SKIP_LINES:
             m = re.match(
-                r"([a-z:_]+)\|([a-zA-ZáäąčćďéěëęíłňńóöřšśťůúüýžźżÁÄĄČĆĎÉĚËĘÍŁŇŃÓÖŘŠŚŤŮÚÜÝŽŹŻ]+)(-([a-zA-Z0-9&]+))?",
+                r"([a-z:_]+)\|([a-zA-Z0-9áäąčćďéěëęíłňńóöřšśťůúüýžźżÁÄĄČĆĎÉĚËĘÍŁŇŃÓÖŘŠŚŤŮÚÜÝŽŹŻ_]+)(-([a-zA-Z0-9&_\-]+))?",
                 mor_word,
             )
             if not m:
@@ -155,6 +156,9 @@ def _apply_token_modifier(
 
         i += 1
 
+    if i < len(lines):
+        res += [lines[i]]
+
     logger.debug(f"_apply_token_modifier: returning {len(res)} lines")
     return res
 
@@ -209,7 +213,32 @@ def main(args):
     if args.std:
         AnnotFile().load(sys.stdin).apply(*predicates).save(sys.stdout)
 
-    # TODO: implement PlainTextCorpusReader
+    if args.indir and args.outdir:
+        input_dir = args.indir[0]
+        output_dir = args.outdir[0]
+
+        reader = PlaintextCorpusReader(input_dir, r".*\.txt", encoding="utf-8")
+
+        for fileid in reader.fileids():
+            src_file = os.path.join(input_dir, fileid)
+            target_file = os.path.join(output_dir, fileid)
+
+            os.makedirs(os.path.dirname(target_file), exist_ok=True)
+
+            logger.info(f"{src_file} -> {target_file}")
+
+            annot_file = AnnotFile()
+
+            with open(src_file, "r", encoding="utf-8") as f:
+                annot_file.load(f)
+
+            annot_file.apply(*predicates)
+
+            with open(target_file, "w", encoding="utf-8") as f:
+                annot_file.save(f)
+
+    elif bool(args.indir) ^ bool(args.outdir):
+        logger.warning("both input directory and output directory must be specified")
 
 
 if __name__ == "__main__":
