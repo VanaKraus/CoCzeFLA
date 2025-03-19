@@ -5,7 +5,7 @@ import logging
 import re
 import os
 import sys
-from typing import Self, TextIO, Callable
+from typing import TextIO, Callable
 
 from nltk.corpus import PlaintextCorpusReader
 
@@ -53,7 +53,7 @@ class ChatToken:
 class AnnotFile:
     lines: list[str]
 
-    def load(self, fs: TextIO) -> Self:
+    def load(self, fs: TextIO) -> "AnnotFile":
         self.lines = [l.strip("\n") for l in fs.readlines()]
         logging.info(f"loaded {len(self.lines)} lines")
         return self
@@ -63,7 +63,7 @@ class AnnotFile:
         for line in self.lines:
             print(line, file=fs)
 
-    def apply(self, *pred: Callable[[list[str]], list[str]]) -> Self:
+    def apply(self, *pred: Callable[[list[str]], list[str]]) -> "AnnotFile":
         for p in pred:
             self.lines = p(self.lines)
         return self
