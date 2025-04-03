@@ -227,7 +227,7 @@ MOR_WORDS_LEMMA_OVERRIDES: dict[str, str] = {
         words.POSS_PRONOUN_F_3SG,
     ]
     for word in word_list
-}
+} | {"zem": "zem"}
 
 # dict: {lemma: pos} | dict: {lemma: word: pos}
 # if word == '_' denotes the default value

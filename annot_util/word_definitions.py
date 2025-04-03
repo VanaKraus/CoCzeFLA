@@ -143,7 +143,6 @@ PRONOMINAL_ADVERBS = [
     "tenkráte",
     "tolik",
     "tolikrát",
-    "tu",
     "tudy",
     "tudyhle",
     "tuhle",
