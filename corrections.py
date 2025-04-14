@@ -299,7 +299,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--vcop",
         action="store_true",
-        help="annotate selected instances of the verb být as v:cop",
+        help="annotate selected instances of the verb 'být' as v:cop",
     )
     parser.add_argument(
         "--part-nogram",
