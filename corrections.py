@@ -164,6 +164,17 @@ def _apply_token_modifier(
     return res
 
 
+def people_lemma(lines: list[str]) -> list[str]:
+    logger.debug("people_lemma: called")
+
+    def _modif(token: ChatToken) -> ChatToken:
+        if token.lemma == "lidé":
+            token.lemma = "člověk"
+        return token
+
+    return _apply_token_modifier(lines, _modif)
+
+
 def demonstrative_variants(lines: list[str]) -> list[str]:
     logger.debug("determiner_variants: called")
 
@@ -216,6 +227,7 @@ def build_predicate_list(args) -> list[Callable[[list[str]], list[str]]]:
         "part_nogram": part_nogram,
         "adj_adv_compdeg": adj_adv_compdeg,
         "dem_lemma": demonstrative_variants,
+        "people_lemma": people_lemma,
     }
 
     res = (
@@ -292,7 +304,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--part-nogram",
         action="store_true",
-        help="remove grammatical categories from the word co when annotated as part",
+        help="remove grammatical categories from the word 'co' when annotated as part",
     )
     parser.add_argument(
         "--adj-adv-compdeg",
@@ -303,6 +315,11 @@ if __name__ == "__main__":
         "--dem-lemma",
         action="store_true",
         help="fix lemmatization of demonstratives",
+    )
+    parser.add_argument(
+        "--people-lemma",
+        action="store_true",
+        help="fix lemmatization of the word 'lidé'",
     )
 
     args = parser.parse_args(sys.argv[1:])
