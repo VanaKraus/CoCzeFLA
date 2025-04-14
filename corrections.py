@@ -11,6 +11,7 @@ from nltk.corpus import PlaintextCorpusReader
 
 import annot_util.replacement_rules as replrules
 from annot_util.conversions import chat_to_plain_text
+from annot_util.morphodita_tools import tag_string
 from annotation import filter_tokens, FlaggedToken
 
 logging.basicConfig()
@@ -163,6 +164,21 @@ def _apply_token_modifier(
     return res
 
 
+def demonstrative_variants(lines: list[str]) -> list[str]:
+    logger.debug("determiner_variants: called")
+
+    def _modif(token: ChatToken) -> ChatToken:
+        if token.lemma == "ten":
+            morph_tokens = tag_string(token.word)
+            assert (
+                len(morph_tokens) == 1
+            ), f"tag_string produced {len(morph_tokens)} tokens instead of one"
+            token.lemma = morph_tokens[0].lemma
+        return token
+
+    return _apply_token_modifier(lines, _modif)
+
+
 def vcop(lines: list[str]) -> list[str]:
     logger.debug("vcop: called")
 
@@ -195,14 +211,22 @@ def adj_adv_compdeg(lines: list[str]):
 
 
 def build_predicate_list(args) -> list[Callable[[list[str]], list[str]]]:
-    res = []
+    predicates: dict[str, Callable[[list[str]], list[str]]] = {
+        "vcop": vcop,
+        "part_nogram": part_nogram,
+        "adj_adv_compdeg": adj_adv_compdeg,
+        "dem_lemma": demonstrative_variants,
+    }
 
-    if args.vcop:
-        res += [vcop]
-    if args.part_nogram:
-        res += [part_nogram]
-    if args.adj_adv_compdeg:
-        res += [adj_adv_compdeg]
+    res = (
+        list(predicates.values())
+        if args.all
+        else [p for k, p in predicates.items() if args.__dict__[k]]
+    )
+
+    logger.debug(f"build_predicate_list:{res}")
+    if len(res) == 0:
+        logger.info(f"build_predicate_list:returning 0 predicates")
 
     return res
 
@@ -254,6 +278,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "-a",
+        "--all",
+        action="store_true",
+        help="perform all applicable corrections",
+    )
+
+    parser.add_argument(
         "--vcop",
         action="store_true",
         help="annotate selected instances of the verb být as v:cop",
@@ -267,6 +298,11 @@ if __name__ == "__main__":
         "--adj-adv-compdeg",
         action="store_true",
         help="use a positive form as lemma for adjectives and adverbs",
+    )
+    parser.add_argument(
+        "--dem-lemma",
+        action="store_true",
+        help="fix lemmatization of demonstratives",
     )
 
     args = parser.parse_args(sys.argv[1:])

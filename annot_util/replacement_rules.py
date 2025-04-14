@@ -213,10 +213,7 @@ _ADJ_ADV_COMPDEG_LEMMA_OVERRIDES: dict[str, str] = (
 )
 
 # dict: {MorfFlex lemma: target lemma}
-MOR_MLEMMAS_LEMMA_OVERRIDES: dict[str, str] = {
-    "tento": "ten",
-    "tenhle": "ten",
-} | _ADJ_ADV_COMPDEG_LEMMA_OVERRIDES
+MOR_MLEMMAS_LEMMA_OVERRIDES: dict[str, str] = _ADJ_ADV_COMPDEG_LEMMA_OVERRIDES
 
 # dict: {word form: target lemma}
 MOR_WORDS_LEMMA_OVERRIDES: dict[str, str] = {
