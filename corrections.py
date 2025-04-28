@@ -102,9 +102,10 @@ def mor_parse(main_line: str, mor_line: str) -> list[ChatToken]:
     main_content_list = [main_content_list[i] for i in range(len(mp)) if mp[i]]
 
     if len(main_content_list) != len(mor_content_list):
-        logger.debug(f"mor_parse: length mismatch {main_line=} {mor_line=}")
         raise ValueError(
-            f"main line and MOR line length mismatch ({len(main_content_list)=} {len(mor_content_list)=})"
+            f"main line and MOR line length mismatch\n\n"
+            + f"{len(main_content_list)=}\n{len(mor_content_list)=}\n\n"
+            + f"{main_line=}\n{mor_line=}\n\n{main_content_list=}\n{mor_content_list=}"
         )
 
     res = []
@@ -246,6 +247,9 @@ def build_predicate_list(args) -> list[Callable[[list[str]], list[str]]]:
 def main(args):
     predicates = build_predicate_list(args)
 
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+
     if args.std:
         AnnotFile().load(sys.stdin).apply(*predicates).save(sys.stdout)
 
@@ -268,7 +272,11 @@ def main(args):
             with open(src_file, "r", encoding="utf-8") as f:
                 annot_file.load(f)
 
-            annot_file.apply(*predicates)
+            try:
+                annot_file.apply(*predicates)
+            except Exception as err:
+                logger.error(f"main: error while correcting {fileid}")
+                raise err
 
             with open(target_file, "w", encoding="utf-8") as f:
                 annot_file.save(f)
@@ -287,6 +295,11 @@ if __name__ == "__main__":
         "--std",
         action="store_true",
         help="receive/print input/output on stdin/stdout",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="make the output verbose (sets the logger into debug mode)",
     )
 
     parser.add_argument(
