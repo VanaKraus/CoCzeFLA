@@ -219,6 +219,21 @@ def adj_adv_compdeg(lines: list[str]):
     return _apply_token_modifier(lines, _modif)
 
 
+def proper_nouns(lines: list[str]):
+    logger.debug("proper_nouns: called")
+
+    def _modif(token: ChatToken) -> ChatToken:
+        match token.pos:
+            case "n:prop":
+                token.pos = "n"
+            case "n:prop:pt":
+                token.pos = "n:pt"
+
+        return token
+
+    return _apply_token_modifier(lines, _modif)
+
+
 # LOGIC
 
 
@@ -229,6 +244,7 @@ def build_predicate_list(args) -> list[Callable[[list[str]], list[str]]]:
         "adj_adv_compdeg": adj_adv_compdeg,
         "dem_lemma": demonstrative_variants,
         "people_lemma": people_lemma,
+        "pnouns": proper_nouns,
     }
 
     res = (
@@ -333,6 +349,11 @@ if __name__ == "__main__":
         "--people-lemma",
         action="store_true",
         help="fix lemmatization of the word 'lidé'",
+    )
+    parser.add_argument(
+        "--pnouns",
+        action="store_true",
+        help="remove proper noun annotations",
     )
 
     args = parser.parse_args(sys.argv[1:])

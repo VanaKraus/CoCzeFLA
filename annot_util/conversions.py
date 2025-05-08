@@ -88,11 +88,6 @@ def generate_mor_pos_label(token: FlaggedToken) -> str:
         # noun
         case "N":
             result = "n"
-            if (
-                tflag.quotation_beginning not in token.flags
-                and word == word.capitalize()
-            ):  # proper noun
-                result = "n:prop"
 
         # adjective
         case "A":

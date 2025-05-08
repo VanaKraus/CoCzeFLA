@@ -233,8 +233,11 @@ MOR_WORDS_LEMMA_OVERRIDES: dict[str, str] = {
 MOR_POS_OVERRIDES: dict[str, dict[str, str]] = (
     {lemma: {"_": "adv:pro"} for lemma in words.PRONOMINAL_ADVERBS}
     | {lemma: {"_": "adv:pro:neg"} for lemma in words.NEGATIVE_PRONOMINAL_ADVERBS}
-    | {lemma: {"_": "n:pt"} for lemma in words.PLURAL_INVARIABLE_NOUNS}
-    | {lemma: {"_": "n:prop:pt"} for lemma in words.PLURAL_INVARIABLE_PROPER_NOUNS}
+    | {
+        lemma: {"_": "n:pt"}
+        for lemma in words.PLURAL_INVARIABLE_NOUNS
+        + words.PLURAL_INVARIABLE_PROPER_NOUNS
+    }
     | {lemma: {"_": "v:mod"} for lemma in words.MODAL_VERBS}
     | {
         "každý": {"_": "pro:indef"},
