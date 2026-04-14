@@ -20,7 +20,7 @@ from nltk.corpus import PlaintextCorpusReader
 import argument_handling as ahandling
 
 PHO_LINE_PREFIX = "%xpho:\t"
-
+VERSIONS = ('1-0', '2-0', '3-0', '3-1', '3-2')
 
 def is_pho_line(line: str) -> bool:
     """If line is %xpho (starts with `%xpho:\t`)."""
@@ -35,7 +35,8 @@ def pho_to_xpho(line: str) -> str:
 def allow_amending(line: str) -> bool:
     """If general amending should be allowed for the line."""
     return bool(
-        regex.match(r"(@(Comment|Situation)|\*[A-Z]{3}|%(err|add|tim|com)):\t", line)
+        regex.match(
+            r"(@(Comment|Situation)|\*[A-Z]{3}|%(err|add|tim|com)):\t", line)
     )
 
 
@@ -48,6 +49,68 @@ def should_be_removed(line: str) -> bool:
     """If a line should be removed."""
     # empty %xpho lines should be removed
     return bool(regex.search(r"^%xpho:\t\.$", line))
+
+
+def underscores_in_songs(line: str) -> str:
+    """
+    Replace underscores in <> brackets with spaces.
+    
+    Brackets containing letters and underscores only are affected.
+    """
+    for match in regex.findall(
+        r'<[_a-záäąčćďéěëęíłňńóöřšśťůúüýžźż]+>', line
+    ):
+        line = line.replace(match, match.replace('_', ' '))
+
+    return line
+
+
+def scoped_comments(line: str) -> str:
+    """
+    Standardize scoped comments (`<scope> [=! comment]`). 
+
+    Keep singing ("zpěv") and reciting ("básnička"),
+    reword similar comments to match these.
+    Remove all other comments.
+    """
+    # recursively match all "<foo> [bar]" patterns
+    # contains 3 capture groups: 1st catches "<foo> [bar]", 2nd catches "foo", 3rd catches "bar"
+    _PATTERN = r"(?:[^<>]|\+<|(<((?R))> \[([^\[\]]+)\]))*?"
+    replacement_operations: list[tuple[str, str]] = []
+    # a queue to enable recursive match finding
+    matches = list(regex.findall(_PATTERN, line))
+
+    while matches:
+        match, scope_content, comment = matches.pop(0)
+
+        # recursively add matches in the scope content
+        if scope_content:
+            matches += list(regex.findall(_PATTERN, scope_content))
+
+        if not comment.startswith('=! '):
+            continue
+
+        comment = comment[3:]
+
+        if comment in {'zpěv', 'básnička'}:
+            continue
+
+        elif comment in {'písnička'}:
+            replacement_operations.append(
+                (match, f'<{scope_content}> [=! zpěv]'))
+
+        elif comment in {'říkanka', 'říkadlo', 'rozpočítadlo'}:
+            replacement_operations.append(
+                (match, f'<{scope_content}> [=! básnička]'))
+
+        else:
+            replacement_operations.append((match, scope_content))
+
+    for op in replacement_operations:
+        line = line.replace(*op)
+
+    return line
+
 
 
 def clear_pho_line(line: str) -> str:
@@ -63,7 +126,8 @@ def clear_pho_line(line: str) -> str:
     """
     prefix = ""
     if is_pho_line(line):
-        prefix, line = line[: len(PHO_LINE_PREFIX)], line[len(PHO_LINE_PREFIX) :]
+        prefix = line[: len(PHO_LINE_PREFIX)]
+        line = line[len(PHO_LINE_PREFIX):]
 
     # remove every non-ending character that isn't a space, letter or schwa (@)
     # and every ending character that isn't a dot or a letter
@@ -114,7 +178,8 @@ def fix_bracket_code_scope(string: str) -> str:
     ):
         allcaptures = m.allcaptures()
         result = result.replace(
-            allcaptures[1][0], f"<{allcaptures[2][-1]}> {allcaptures[3][0]}"  # type: ignore
+            allcaptures[1][0],  # type: ignore
+            f"<{allcaptures[2][-1]}> {allcaptures[3][0]}",  # type: ignore
         )
 
     return result
@@ -126,6 +191,8 @@ def spaces_around_punctuation(string: str) -> str:
     string = regex.sub(r" *(,|“|”|;) *", r" \1 ", string).strip()
     # end-of-line characters
     string = regex.sub(r" *(\.|\?|\!|\+\.\.\.|\+/\.)$", r" \1", string).strip()
+    # other characters requiring a preceding space
+    string = regex.sub(r" *(\[)", r" \1", string).strip()
     # remove excessive whitespaces
     string = regex.sub(r" {2,}", r" ", string)
     # correct for spaces before end-of-line characters that are the only tokens on their lines
@@ -158,7 +225,8 @@ def repetition_to_false_starts(string: str) -> str:
 
     # recursively match all "<foo> [bar]" patterns
     # contains 3 capture groups: 1st catches "<foo> [bar]", 2nd catches "foo", 3rd catches "bar"
-    matches = regex.fullmatch(r"(?:[^<>]|\+<|(<((?R))> \[([^\[\]]+)\]))*", result)
+    matches = regex.fullmatch(r"(?:[^<>]|\+<|(<((?R))> \[([^\[\]]+)\]))*",
+                              result)
 
     # unable to match the regex pattern indicates defective syntax
     if not matches:
@@ -170,7 +238,8 @@ def repetition_to_false_starts(string: str) -> str:
 
     # iterate through all matched patterns
     for i, pattern in enumerate(allcaptures[1]):  # type: ignore
-        content, modifier = allcaptures[2][i], allcaptures[3][i]  # type: ignore
+        content = allcaptures[2][i]  # type: ignore
+        modifier = allcaptures[3][i]  # type: ignore
 
         # catch up with already computed replacements
         for operation in replacement_operations:
@@ -196,45 +265,59 @@ def repetition_to_false_starts(string: str) -> str:
 
     # check if we've missed a repetition marker
     if marker := regex.search(r"\[x [0-9]+\]", result):
-        raise ValueError(f'Unable to remove "{marker.group(0)}" from "{string}"')
+        raise ValueError(
+            f'Unable to remove "{marker.group(0)}" from "{string}"')
 
     return result
 
 
-def apply_new_standard(line: str, fix_errors: bool = False) -> str | None:
+def apply_new_standard(line: str, tver: str,
+                       fix_errors: bool = False) -> str | None:
     """Convert line to the new transcription standard.
 
     Args:
         line (str)
+        tver (str): Target transcription version
 
     Returns:
         str | None: the modified line. None when the line should be removed.
     """
     line = line.strip("\r\n")
 
-    line = pho_to_xpho(line)
+    if should_be_removed(line):
+        return None
 
-    if is_pho_line(line):
-        line = clear_pho_line(line)
+    if not allow_amending(line):
+        return line
 
     if allow_amending(line):
         line = convert_quotation_marks(line)
         line = horizontal_ellipsis(line)
         line = spaces_around_punctuation(line)
 
+    if VERSIONS.index(tver) >= VERSIONS.index('2-0'):
         if is_main_transcription_line(line):
+            line = fix_bracket_code_scope(line)
+            line = underscores_in_songs(line)
+            line = scoped_comments(line)
+
+            # all other changes do not appear relevant to Chroma anymore
+
+    if VERSIONS.index(tver) >= VERSIONS.index('3-2'):
+        line = pho_to_xpho(line)
+
+        if is_pho_line(line):
+            line = clear_pho_line(line)
+
+        elif is_main_transcription_line(line):
             line = word_fragments(line)
             line = missing_words(line)
-
-            if fix_errors:
-                line = fix_bracket_code_scope(line)
-
             try:
                 line = repetition_to_false_starts(line)
             except ValueError as e:
                 print(e, file=sys.stderr)
 
-    return None if should_be_removed(line) else line
+    return line
 
 
 class LineComposer:
@@ -295,32 +378,37 @@ class LineComposer:
         self.line = ""
 
 
-def convert_filestream(source_fs, target_fs, fix_errors: bool = False):
+def convert_filestream(source_fs, target_fs, tver: str,
+                       fix_errors: bool = False):
     """Convert filestream.
 
     Args:
         source_fs: Source filestream.
         target_fs: Target filestream.
+        tver: Target transcription version.
     """
     with LineComposer(
-        lambda s: apply_new_standard(s, fix_errors), target_fs
+        lambda s: apply_new_standard(s, tver, fix_errors), target_fs
     ) as composer:
         for line in source_fs:
             composer.add(line)
 
 
-def convert_file(path_source: str, path_target: str, fix_errors: bool = False):
+def convert_file(path_source: str, path_target: str, tver: str,
+                 fix_errors: bool = False):
     """Convert single file.
 
     Args:
         path_source (str): Path to the source file.
         path_target (str): Path to the target file. Existing files will be overwritten.
+        tver: Target transcription version.
     """
     try:
         with open(path_source, "r", encoding="utf-8") as source_fs:
             with open(path_target, "w", encoding="utf-8") as target_fs:
-                print(f"Convert\t: {path_source} -> {path_target}", file=sys.stderr)
-                convert_filestream(source_fs, target_fs, fix_errors)
+                print(f"Convert\t: {path_source} -> {path_target}",
+                      file=sys.stderr)
+                convert_filestream(source_fs, target_fs, tver, fix_errors)
     except IsADirectoryError:
         print(f"Skip\t: {path_source} (directory)", file=sys.stderr)
     except FileNotFoundError:
@@ -328,9 +416,14 @@ def convert_file(path_source: str, path_target: str, fix_errors: bool = False):
 
 
 def _handle_args(args):
+    tver = args.target_version
+    if tver not in VERSIONS:
+        raise ValueError(f'target transcription version was expected '
+                         f'to be {' or '.join(VERSIONS)}, received \'{tver}\'.')
+
     # take input from stdin
     if args.std:
-        convert_filestream(sys.stdin, sys.stdout, args.fix)
+        convert_filestream(sys.stdin, sys.stdout, tver, args.fix)
     # take files as input
     elif args.outdir:
         files: list[tuple[str, str]] = []
@@ -341,7 +434,8 @@ def _handle_args(args):
                 args.indir[0], r".*\.(txt|cha)", encoding="utf-8"
             )
             files = [
-                (os.path.join(args.indir[0], id), os.path.join(args.outdir[0], id))
+                (os.path.join(args.indir[0], id),
+                 os.path.join(args.outdir[0], id))
                 for id in reader.fileids()
             ]
 
@@ -361,7 +455,7 @@ def _handle_args(args):
         for input_file, output_file in files:
             if not os.path.isdir(dname := os.path.dirname(output_file)):
                 os.makedirs(dname)
-            convert_file(input_file, output_file, args.fix)
+            convert_file(input_file, output_file, tver, args.fix)
     else:
         print(
             "An output directory needs to be specified. See --help for more.",
@@ -371,13 +465,13 @@ def _handle_args(args):
 
 if __name__ == "__main__":
     req_arguments = ahandling.get_argument_subset(
-        "inputfiles", "std", "indir", "outdir", "fix"
+        "inputfiles", "std", "indir", "outdir", "fix", "target_version",
     )
 
     if len(sys.argv) > 1:
         parser = ahandling.get_argument_parser(
             req_arguments,
-            description="convert CHAT text files to the v3.1 transcription standard.",
+            description="convert CHAT text files to a newer transcription standard.",
         )
         arguments = parser.parse_args(sys.argv[1:])
 

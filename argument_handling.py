@@ -45,7 +45,7 @@ ARGUMENTS: dict[str, Argument] = {
         "--indir",
         nargs=1,
         type=str,
-        help="take all .txt files from this directory as the input; \
+        help="take all .txt/.cha files from this directory as the input; \
         enabling this option overrides all inputfiles",
     ),
     "tokenizer": Argument(
@@ -78,6 +78,14 @@ ARGUMENTS: dict[str, Argument] = {
         action="store_true",
         help="enable MorphoDiTa morphological guesser",
     ),
+    'target_version': Argument(
+        '-v',
+        '--target_version',
+        type=str,
+        choices=['2-0', '3-0', '3-1', '3-2'],
+        default='3-2',
+        help='target transcription version',
+    )
 }
 
 
@@ -171,6 +179,14 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
     """
     result = Namespace(**{id: None for id in args.keys()})
 
+    # set default values
+    for arg in args.values():
+        if 'default' in arg.arguments and (potnames := [
+            flag for flag in arg.flags if flag.startswith('--') or not flag.startswith('-')
+        ]):
+            result.__setattr__(potnames[0].lstrip('-'),
+                               arg.arguments['default'])
+
     print("--- Configuration walkthrough ---")
 
     if "indir" in args:
@@ -219,7 +235,6 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
             result.tokenizer = [uinput]
 
     if "tagger" in args:
-
         uinput = _get_string_input(
             "Configure path to your tagger. Leave empty if you want to "
             + f"use the default value ('{constants.TAGGER_PATH}'):",
@@ -228,6 +243,18 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
 
         if uinput:
             result.tagger = [uinput]
+
+    if "target_version" in args:
+        uinput = _get_string_input(
+            "Set the desired version of the transcription "
+            f"({' or '.join(args['target_version'].arguments['choices'])}). "
+            "Leave empty to use the default value "
+            f"({args['target_version'].arguments['default']}):",
+            allow_empty=True,
+        )
+
+        if uinput:
+            result.target_version = uinput
 
     if "fix" in args:
         result.fix = _get_boolean_input(
