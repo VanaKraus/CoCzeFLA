@@ -36,7 +36,7 @@ def allow_amending(line: str) -> bool:
     """If general amending should be allowed for the line."""
     return bool(
         regex.match(
-            r"(@(Comment|Situation)|\*[A-Z]{3}|%(err|add|tim|com)):\t", line)
+            r"(@(Comment|Situation)|\*[A-Z]{3}|%(err|add|tim|com|x?pho)):\t", line)
     )
 
 
