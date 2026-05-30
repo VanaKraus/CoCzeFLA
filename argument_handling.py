@@ -84,7 +84,13 @@ ARGUMENTS: dict[str, Argument] = {
         type=str,
         choices=['2-0', '3-0', '3-1', '3-2'],
         default='3-2',
-        help='target transcription version',
+        help='target transcription version; default: 3-2',
+    ),
+    'mask': Argument(
+        '--mask',
+        type=str,
+        default=r".*\.(txt|cha)",
+        help='RegEx mask to search for files with; default: .*\\.(txt|cha)'
     )
 }
 
@@ -199,6 +205,17 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
 
         if indir:
             result.indir = [indir]
+
+            if "mask" in args:
+                mask = _get_string_input(
+                    "Set a RegEx mask to search for files with."
+                    " Leave empty to use the default (r\".*\\.(txt|cha)\")",
+                    allow_empty=True
+                )
+                if len(mask) >= 3 and mask.startswith('r"') and mask.endswith('"'):
+                    mask = mask[2:-1]
+                result.mask = mask
+
         else:
             inputfiles = []
 

@@ -431,7 +431,9 @@ def _handle_args(args):
         # an input directory specified
         if args.indir:
             reader = PlaintextCorpusReader(
-                args.indir[0], r".*\.(txt|cha)", encoding="utf-8"
+                args.indir[0],
+                args.mask if args.mask else r".*\.(txt|cha)",
+                encoding="utf-8"
             )
             files = [
                 (os.path.join(args.indir[0], id),
@@ -465,7 +467,7 @@ def _handle_args(args):
 
 if __name__ == "__main__":
     req_arguments = ahandling.get_argument_subset(
-        "inputfiles", "std", "indir", "outdir", "fix", "target_version",
+        "inputfiles", "std", "indir", "outdir", "fix", "target_version", "mask"
     )
 
     if len(sys.argv) > 1:
