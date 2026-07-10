@@ -86,6 +86,13 @@ ARGUMENTS: dict[str, Argument] = {
         default='3-2',
         help='target transcription version; default: 3-2',
     ),
+    'force_all': Argument(
+        '-F',
+        '--force-all',
+        action='store_true',
+        help=('force-convert all files, even if the target file exists'
+              ' and is newer than the source')
+    ),
     'mask': Argument(
         '--mask',
         type=str,
@@ -236,6 +243,14 @@ def argument_walkthrough(args: dict[str, Argument]) -> Namespace:
 
             result.inputfiles = inputfiles
             result.std = not bool(inputfiles)
+
+
+        if "force_all" in args and (result.inputfiles or result.indir):
+            result.force_all = _get_boolean_input(
+                'Force-convert all files from the scratch, even if a converted version already exists'
+                ' and is newer than the source?'
+            )
+
 
     if not result.std:
         if "outdir" in args:

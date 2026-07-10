@@ -454,10 +454,23 @@ def _handle_args(args):
             return
 
         # run file conversion
+        fs_skipped = 0
         for input_file, output_file in files:
             if not os.path.isdir(dname := os.path.dirname(output_file)):
                 os.makedirs(dname)
+
+            # skip already transcribed files
+            if ((not args.force_all) and 
+                os.path.exists(output_file) and 
+                os.path.getmtime(input_file) < os.path.getmtime(output_file)):
+                fs_skipped += 1
+                continue
+
             convert_file(input_file, output_file, tver, args.fix)
+
+        if fs_skipped > 0:
+            print(f'Skipped {fs_skipped} file(s). Run with --force-all to disable.')
+
     else:
         print(
             "An output directory needs to be specified. See --help for more.",
@@ -467,7 +480,7 @@ def _handle_args(args):
 
 if __name__ == "__main__":
     req_arguments = ahandling.get_argument_subset(
-        "inputfiles", "std", "indir", "outdir", "fix", "target_version", "mask"
+        "inputfiles", "std", "indir", "outdir", "fix", "target_version", "mask", "force_all"
     )
 
     if len(sys.argv) > 1:

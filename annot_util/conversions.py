@@ -56,12 +56,12 @@ def chat_to_plain_text(chat_line: str) -> str | None:
             raise ChatToPlainTextConversionError(chat_line, result)
 
         result_intermediate = result
-        for rule in rules.CHAT_TO_PLAIN_TEXT:
+        for rule_pattern, rule_repl in rules.chat_to_plain_text_cmp:
             if result_intermediate == "":
                 result = result_intermediate
                 break
 
-            result_intermediate = re.sub(rule[0], rule[1], result_intermediate)
+            result_intermediate = rule_pattern.sub(rule_repl, result_intermediate)
 
         needs_review = result_intermediate != result
         result = result_intermediate

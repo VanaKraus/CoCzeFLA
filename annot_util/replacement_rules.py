@@ -1,3 +1,5 @@
+import re
+
 from annot_util import constants
 import annot_util.word_definitions as words
 
@@ -81,6 +83,8 @@ CHAT_TO_PLAIN_TEXT: list[tuple[str, str]] = [
     (r"^\s+", r""),
     (r"\s+$", r""),
 ]
+
+chat_to_plain_text_cmp = [(re.compile(pattern), repl) for pattern, repl in CHAT_TO_PLAIN_TEXT]
 
 # when a string matches this pattern, we count it as plaintext
 PLAIN_TEXT_CRITERIA: str = (
@@ -279,7 +283,7 @@ MOR_POS_OVERRIDES: dict[str, dict[str, str]] = (
 )
 
 # lines not to be annotated
-SKIP_LINES: list[str] = [".", "0 .", "+/.", "+...", "!", "?"]
+SKIP_LINES: set[str] = {".", "0 .", "+/.", "+...", "!", "?"}
 
 
 # verify integrity
